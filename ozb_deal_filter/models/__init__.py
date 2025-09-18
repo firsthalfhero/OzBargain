@@ -10,18 +10,23 @@ from .evaluation import EvaluationResult
 from .filter import FilterResult, UrgencyLevel
 from .alert import FormattedAlert
 from .delivery import DeliveryResult
-from .config import Configuration, UserCriteria, LLMProviderConfig, MessagingPlatformConfig
+from .config import (
+    Configuration,
+    UserCriteria,
+    LLMProviderConfig,
+    MessagingPlatformConfig,
+)
 
 __all__ = [
-    'Deal',
-    'RawDeal',
-    'EvaluationResult',
-    'FilterResult',
-    'UrgencyLevel',
-    'FormattedAlert',
-    'DeliveryResult',
-    'Configuration',
-    'UserCriteria',
-    'LLMProviderConfig',
-    'MessagingPlatformConfig',
+    "Deal",
+    "RawDeal",
+    "EvaluationResult",
+    "FilterResult",
+    "UrgencyLevel",
+    "FormattedAlert",
+    "DeliveryResult",
+    "Configuration",
+    "UserCriteria",
+    "LLMProviderConfig",
+    "MessagingPlatformConfig",
 ]
