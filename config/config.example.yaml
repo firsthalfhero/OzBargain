@@ -1,0 +1,36 @@
+# Example configuration file for OzBargain Deal Filter
+# Copy this to config.yaml and customize for your setup
+
+rss_feeds:
+  - "https://www.ozbargain.com.au/deals/feed"
+  - "https://www.ozbargain.com.au/cat/computing/feed"
+
+user_criteria:
+  prompt_template: "prompts/deal_evaluator.txt"
+  max_price: 500.0
+  min_discount_percentage: 20.0
+  categories: ["Computing", "Electronics"]
+  keywords: ["laptop", "monitor", "keyboard"]
+  min_authenticity_score: 0.6
+
+llm_provider:
+  type: "local"  # or "api"
+  local:
+    model: "llama2"
+    docker_image: "ollama/ollama"
+  api:
+    provider: "openai"
+    api_key: "${OPENAI_API_KEY}"
+    model: "gpt-3.5-turbo"
+
+messaging_platform:
+  type: "telegram"
+  telegram:
+    bot_token: "${TELEGRAM_BOT_TOKEN}"
+    chat_id: "${TELEGRAM_CHAT_ID}"
+
+system:
+  polling_interval: 120  # seconds
+  max_concurrent_feeds: 10
+  alert_timeout: 300  # 5 minutes for regular deals
+  urgent_alert_timeout: 120  # 2 minutes for urgent deals
