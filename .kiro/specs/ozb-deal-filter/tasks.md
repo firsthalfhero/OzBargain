@@ -32,7 +32,8 @@
 
 
 
-  - [-] 3.1 Implement RSS feed monitoring
+  - [x] 3.1 Implement RSS feed monitoring
+
 
 
 
@@ -49,6 +50,10 @@
 
 
   - [ ] 3.2 Create deal parsing and extraction
+
+
+
+
 
 
     - Implement DealParser to convert RSS entries to Deal objects
