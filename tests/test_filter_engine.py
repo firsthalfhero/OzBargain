@@ -442,3 +442,108 @@ class TestFilterEngine:
         # Should pass category and keyword checks when lists are empty
         assert filter_engine._check_category_match(deal) is True
         assert filter_engine._check_keyword_match(deal) is True
+
+    def test_expired_deal_in_title(self):
+        """Test that deals with 'expired' in title are filtered out."""
+        user_criteria = self.create_user_criteria()
+        filter_engine = FilterEngine(user_criteria)
+
+        deal = self.create_deal(
+            title="Great laptop deal [EXPIRED]",
+            description="Amazing discount on gaming laptop",
+        )
+
+        evaluation = self.create_evaluation_result()
+        result = filter_engine.apply_filters(deal, evaluation)
+
+        assert result.passes_filters is False
+        assert result.price_match is False  # Should be False for expired deals
+        assert result.authenticity_score == 0.0  # Should be 0 for expired deals
+
+    def test_expired_deal_in_description(self):
+        """Test that deals with expiration indicators in description are filtered out."""
+        user_criteria = self.create_user_criteria()
+        filter_engine = FilterEngine(user_criteria)
+
+        deal = self.create_deal(
+            title="Great laptop deal",
+            description="This offer has expired and is no longer available",
+        )
+
+        evaluation = self.create_evaluation_result()
+        result = filter_engine.apply_filters(deal, evaluation)
+
+        assert result.passes_filters is False
+
+    def test_expired_deal_various_patterns(self):
+        """Test various expiration patterns are detected."""
+        user_criteria = self.create_user_criteria()
+        filter_engine = FilterEngine(user_criteria)
+
+        expiration_texts = [
+            "Deal has ended",
+            "Offer expired",
+            "SOLD OUT",
+            "No longer available",
+            "Promotion ended",
+            "(expired)",
+            "Deal closed",
+            "Inactive deal",
+        ]
+
+        for expiration_text in expiration_texts:
+            deal = self.create_deal(
+                title=f"Great deal - {expiration_text}", description="Test description"
+            )
+
+            evaluation = self.create_evaluation_result()
+            result = filter_engine.apply_filters(deal, evaluation)
+
+            assert (
+                result.passes_filters is False
+            ), f"Failed to detect expiration in: {expiration_text}"
+
+    def test_non_expired_deal_passes(self):
+        """Test that non-expired deals pass the expiration check."""
+        user_criteria = self.create_user_criteria()
+        filter_engine = FilterEngine(user_criteria)
+
+        deal = self.create_deal(
+            title="Great laptop deal - Limited time offer",
+            description="Amazing discount on gaming laptop while stocks last",
+        )
+
+        # Should pass expiration check (other filters may still fail)
+        assert filter_engine._check_deal_expired(deal) is False
+
+    def test_expiration_check_case_insensitive(self):
+        """Test that expiration checking is case insensitive."""
+        user_criteria = self.create_user_criteria()
+        filter_engine = FilterEngine(user_criteria)
+
+        deal = self.create_deal(
+            title="Great deal - EXPIRED", description="Test description"
+        )
+
+        assert filter_engine._check_deal_expired(deal) is True
+
+        deal2 = self.create_deal(title="Great deal", description="This deal has ENDED")
+
+        assert filter_engine._check_deal_expired(deal2) is True
+
+    def test_expiration_check_direct_method(self):
+        """Test the _check_deal_expired method directly."""
+        user_criteria = self.create_user_criteria()
+        filter_engine = FilterEngine(user_criteria)
+
+        # Test expired deal
+        expired_deal = self.create_deal(
+            title="Laptop deal [expired]", description="Great laptop"
+        )
+        assert filter_engine._check_deal_expired(expired_deal) is True
+
+        # Test active deal
+        active_deal = self.create_deal(
+            title="Laptop deal - great price", description="Amazing laptop discount"
+        )
+        assert filter_engine._check_deal_expired(active_deal) is False

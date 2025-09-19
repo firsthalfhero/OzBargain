@@ -64,7 +64,7 @@ This project follows PEP 8 standards and uses type hints throughout. The archite
 - **RSS Monitor**: Polls configured feeds for new deals
 - **Deal Parser**: Extracts structured data from RSS entries  
 - **LLM Evaluator**: Uses AI to assess deal relevance
-- **Filter Engine**: Applies price and authenticity filters
+- **Filter Engine**: Applies price, discount, authenticity, and expiration filters
 - **Alert Formatter**: Creates rich notification messages
 - **Message Dispatcher**: Delivers alerts via messaging platforms
 

@@ -1,6 +1,7 @@
 """Filter engine for applying price, discount, and authenticity filters to deals."""
 
 import logging
+import re
 from typing import Optional
 
 from ..models.deal import Deal
@@ -45,11 +46,27 @@ class PriceFilter:
 class FilterEngine:
     """Main filter engine that applies all filtering criteria."""
 
+    # Patterns that indicate an expired deal
+    EXPIRATION_PATTERNS = [
+        r"\b(?:expired?|ended?|closed|inactive|unavailable|sold\s*out|no\s*longer\s*available)\b",
+        r"\[expired?\]",
+        r"\(expired?\)",
+        r"deal\s*(?:has\s*)?ended?",
+        r"offer\s*(?:has\s*)?expired?",
+        r"promotion\s*(?:has\s*)?ended?",
+    ]
+
     def __init__(self, user_criteria: UserCriteria):
         """Initialize filter engine with user criteria."""
         self.user_criteria = user_criteria
         self.price_filter = PriceFilter(user_criteria.max_price)
         self.authenticity_assessor = AuthenticityAssessor()
+
+        # Compile expiration patterns for better performance
+        self.expiration_regexes = [
+            re.compile(pattern, re.IGNORECASE) for pattern in self.EXPIRATION_PATTERNS
+        ]
+
         logger.info(
             f"FilterEngine initialized with max_price={user_criteria.max_price}, "
             f"min_discount={user_criteria.min_discount_percentage}"
@@ -58,6 +75,21 @@ class FilterEngine:
     def apply_filters(self, deal: Deal, evaluation: EvaluationResult) -> FilterResult:
         """Apply all filters to a deal and return the result."""
         logger.debug(f"Applying filters to deal: {deal.id}")
+
+        # Check if deal is expired (most important check - do this first)
+        is_expired = self._check_deal_expired(deal)
+        logger.debug(f"Deal expired check for {deal.id}: {is_expired}")
+
+        if is_expired:
+            # If deal is expired, immediately fail all filters
+            filter_result = FilterResult(
+                passes_filters=False,
+                price_match=False,
+                authenticity_score=0.0,
+                urgency_level=UrgencyLevel.LOW,
+            )
+            logger.info(f"Deal {deal.id} filtered out: EXPIRED")
+            return filter_result
 
         # Check price threshold
         price_match = self.price_filter.check_price_threshold(deal)
@@ -137,6 +169,28 @@ class FilterEngine:
         user_keywords = [keyword.lower() for keyword in self.user_criteria.keywords]
 
         return any(keyword in search_text for keyword in user_keywords)
+
+    def _check_deal_expired(self, deal: Deal) -> bool:
+        """Check if a deal is expired based on title and description patterns.
+
+        Args:
+            deal: Deal object to check
+
+        Returns:
+            True if deal appears to be expired, False otherwise
+        """
+        # Combine title and description for comprehensive checking
+        search_text = f"{deal.title} {deal.description}".lower()
+
+        # Check against all expiration patterns
+        for regex in self.expiration_regexes:
+            if regex.search(search_text):
+                logger.debug(
+                    f"Deal {deal.id} matched expiration pattern: {regex.pattern}"
+                )
+                return True
+
+        return False
 
     def _calculate_urgency_level(
         self, deal: Deal, evaluation: EvaluationResult, authenticity_score: float
