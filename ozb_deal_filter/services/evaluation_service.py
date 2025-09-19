@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class EvaluationService:
     """
     Main service for evaluating deals using LLM and prompt templates.
-    
+
     This service coordinates between the LLM evaluator and prompt manager
     to provide comprehensive deal evaluation with timeout handling and
     error recovery mechanisms.
@@ -39,15 +39,15 @@ class EvaluationService:
         self.llm_config = llm_config
         self.user_criteria = user_criteria
         self.evaluation_timeout = evaluation_timeout
-        
+
         # Initialize components
         self.llm_evaluator = LLMEvaluator(llm_config)
         self.prompt_manager = PromptManager(prompts_directory)
-        
+
         # Load and cache the prompt template
         self._prompt_template: Optional[str] = None
         self._load_prompt_template()
-        
+
         # Evaluation statistics
         self.stats = {
             "total_evaluations": 0,
@@ -84,13 +84,13 @@ class EvaluationService:
     async def evaluate_deal(self, deal: Deal) -> EvaluationResult:
         """
         Evaluate a deal using LLM with timeout and error handling.
-        
+
         Args:
             deal: The deal to evaluate
-            
+
         Returns:
             EvaluationResult with relevance assessment
-            
+
         Raises:
             RuntimeError: If evaluation fails completely
         """
@@ -106,14 +106,13 @@ class EvaluationService:
 
             # Perform evaluation with timeout
             result = await asyncio.wait_for(
-                self._perform_evaluation(deal),
-                timeout=self.evaluation_timeout
+                self._perform_evaluation(deal), timeout=self.evaluation_timeout
             )
 
             # Update statistics
             response_time = (datetime.now() - start_time).total_seconds()
             self._update_stats(response_time, success=True)
-            
+
             logger.info(
                 f"Deal evaluation completed: {deal.title[:50]}... -> "
                 f"{'RELEVANT' if result.is_relevant else 'NOT RELEVANT'} "
@@ -129,18 +128,18 @@ class EvaluationService:
             )
             self.stats["timeout_evaluations"] += 1
             self.stats["failed_evaluations"] += 1
-            
+
             # Return a timeout result
             return EvaluationResult(
                 is_relevant=False,
                 confidence_score=0.0,
-                reasoning=f"Evaluation timed out after {self.evaluation_timeout}s"
+                reasoning=f"Evaluation timed out after {self.evaluation_timeout}s",
             )
 
         except Exception as e:
             logger.error(f"Deal evaluation failed: {e}")
             self.stats["failed_evaluations"] += 1
-            
+
             # Try fallback evaluation
             try:
                 result = self._fallback_evaluation(deal)
@@ -148,33 +147,33 @@ class EvaluationService:
                 return result
             except Exception as fallback_error:
                 logger.error(f"Fallback evaluation also failed: {fallback_error}")
-                
+
                 # Return a failed evaluation result
                 return EvaluationResult(
                     is_relevant=False,
                     confidence_score=0.0,
-                    reasoning=f"Evaluation failed: {str(e)[:200]}"
+                    reasoning=f"Evaluation failed: {str(e)[:200]}",
                 )
 
     async def _perform_evaluation(self, deal: Deal) -> EvaluationResult:
         """Perform the actual LLM evaluation."""
         if not self._prompt_template:
             raise RuntimeError("No prompt template available")
-            
+
         return await self.llm_evaluator.evaluate_deal(deal, self._prompt_template)
 
     def _fallback_evaluation(self, deal: Deal) -> EvaluationResult:
         """
         Perform fallback evaluation using simple keyword matching.
-        
+
         This is used when LLM evaluation fails completely.
         """
         logger.info(f"Performing fallback evaluation for: {deal.title[:50]}...")
-        
+
         # Extract keywords from user criteria
         keywords = self.user_criteria.keywords.copy()
         categories = [cat.lower() for cat in self.user_criteria.categories]
-        
+
         # Add category-based keywords
         if "computing" in categories:
             keywords.extend(["laptop", "computer", "pc", "cpu", "gpu"])
@@ -186,39 +185,39 @@ class EvaluationService:
         # Check deal content for keywords
         deal_text = f"{deal.title} {deal.description} {deal.category}".lower()
         matches = sum(1 for keyword in keywords if keyword.lower() in deal_text)
-        
+
         # Simple relevance logic
         is_relevant = matches > 0
         confidence_score = min(0.6, matches * 0.15)  # Lower confidence for fallback
-        
+
         reasoning = (
             f"Fallback keyword evaluation: {matches} keyword matches found. "
             f"Keywords: {', '.join(keywords[:5])}{'...' if len(keywords) > 5 else ''}"
         )
-        
+
         return EvaluationResult(
             is_relevant=is_relevant,
             confidence_score=confidence_score,
-            reasoning=reasoning
+            reasoning=reasoning,
         )
 
     def _update_stats(self, response_time: float, success: bool) -> None:
         """Update evaluation statistics."""
         if success:
             self.stats["successful_evaluations"] += 1
-            
+
         # Update average response time
         total_successful = self.stats["successful_evaluations"]
         if total_successful > 0:
             current_avg = self.stats["average_response_time"]
             self.stats["average_response_time"] = (
-                (current_avg * (total_successful - 1) + response_time) / total_successful
-            )
+                current_avg * (total_successful - 1) + response_time
+            ) / total_successful
 
     def reload_prompt_template(self) -> bool:
         """
         Reload the prompt template from file.
-        
+
         Returns:
             True if reload was successful, False otherwise
         """
@@ -235,10 +234,10 @@ class EvaluationService:
     def update_llm_config(self, new_config: LLMProviderConfig) -> bool:
         """
         Update LLM provider configuration.
-        
+
         Args:
             new_config: New LLM provider configuration
-            
+
         Returns:
             True if update was successful, False otherwise
         """
@@ -254,7 +253,7 @@ class EvaluationService:
     def test_evaluation_pipeline(self) -> Dict[str, Any]:
         """
         Test the complete evaluation pipeline.
-        
+
         Returns:
             Dictionary with test results and status information
         """
@@ -262,9 +261,9 @@ class EvaluationService:
             "prompt_template_loaded": self._prompt_template is not None,
             "prompt_template_valid": False,
             "llm_providers_status": {},
-            "overall_status": "unknown"
+            "overall_status": "unknown",
         }
-        
+
         # Test prompt template
         if self._prompt_template:
             try:
@@ -272,30 +271,32 @@ class EvaluationService:
                 results["prompt_template_valid"] = True
             except Exception as e:
                 results["prompt_template_error"] = str(e)
-        
+
         # Test LLM providers
         try:
             provider_results = self.llm_evaluator.test_providers()
             results["llm_providers_status"] = provider_results
         except Exception as e:
             results["llm_providers_error"] = str(e)
-        
+
         # Determine overall status
-        if (results["prompt_template_loaded"] and 
-            results["prompt_template_valid"] and
-            any(results["llm_providers_status"].values())):
+        if (
+            results["prompt_template_loaded"]
+            and results["prompt_template_valid"]
+            and any(results["llm_providers_status"].values())
+        ):
             results["overall_status"] = "healthy"
         elif results["prompt_template_loaded"]:
             results["overall_status"] = "degraded"
         else:
             results["overall_status"] = "failed"
-        
+
         return results
 
     def get_evaluation_stats(self) -> Dict[str, Any]:
         """Get current evaluation statistics."""
         stats = self.stats.copy()
-        
+
         # Calculate success rate
         total = stats["total_evaluations"]
         if total > 0:
@@ -308,7 +309,7 @@ class EvaluationService:
             stats["failure_rate"] = 0.0
             stats["timeout_rate"] = 0.0
             stats["fallback_rate"] = 0.0
-        
+
         return stats
 
     def reset_stats(self) -> None:

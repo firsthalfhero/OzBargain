@@ -152,7 +152,7 @@ class APILLMClient(LLMProvider):
         self.client: Union[openai.OpenAI, anthropic.Anthropic]
         self.openai_client: Optional[openai.OpenAI] = None
         self.anthropic_client: Optional[anthropic.Anthropic] = None
-        
+
         if self.provider == "openai":
             self.client = openai.OpenAI(api_key=self.api_key)
             self.openai_client = self.client
@@ -178,13 +178,11 @@ class APILLMClient(LLMProvider):
             logger.error(f"API LLM evaluation failed: {e}")
             raise RuntimeError(f"API LLM evaluation failed: {e}")
 
-    async def _evaluate_openai(
-        self, prompt: str, start_time: float
-    ) -> LLMResponse:
+    async def _evaluate_openai(self, prompt: str, start_time: float) -> LLMResponse:
         """Evaluate using OpenAI API."""
         if not self.openai_client:
             raise RuntimeError("OpenAI client not initialized")
-            
+
         response = self.openai_client.chat.completions.create(
             model=self.model,
             messages=[
@@ -214,13 +212,11 @@ class APILLMClient(LLMProvider):
             tokens_used=tokens_used,
         )
 
-    async def _evaluate_anthropic(
-        self, prompt: str, start_time: float
-    ) -> LLMResponse:
+    async def _evaluate_anthropic(self, prompt: str, start_time: float) -> LLMResponse:
         """Evaluate using Anthropic API."""
         if not self.anthropic_client:
             raise RuntimeError("Anthropic client not initialized")
-            
+
         response = self.anthropic_client.messages.create(
             model=self.model,
             max_tokens=500,
@@ -236,8 +232,7 @@ class APILLMClient(LLMProvider):
             provider="anthropic",
             model=self.model,
             response_time=response_time,
-            tokens_used=response.usage.input_tokens
-            + response.usage.output_tokens,
+            tokens_used=response.usage.input_tokens + response.usage.output_tokens,
         )
 
     def test_connection(self) -> bool:
@@ -282,8 +277,7 @@ class LLMEvaluator:
             if self.config.type == "local" and self.config.local:
                 self.primary_provider = LocalLLMClient(self.config.local)
                 logger.info(
-                    f"Configured local LLM provider: "
-                    f"{self.config.local['model']}"
+                    f"Configured local LLM provider: " f"{self.config.local['model']}"
                 )
 
                 # Setup API fallback if configured
@@ -297,8 +291,7 @@ class LLMEvaluator:
             elif self.config.type == "api" and self.config.api:
                 self.primary_provider = APILLMClient(self.config.api)
                 logger.info(
-                    f"Configured API LLM provider: "
-                    f"{self.config.api['provider']}"
+                    f"Configured API LLM provider: " f"{self.config.api['provider']}"
                 )
 
                 # Setup local fallback if configured
@@ -314,9 +307,7 @@ class LLMEvaluator:
             raise RuntimeError(f"LLM provider setup failed: {e}")
             raise RuntimeError(f"LLM provider setup failed: {e}")
 
-    async def evaluate_deal(
-        self, deal: Deal, prompt_template: str
-    ) -> EvaluationResult:
+    async def evaluate_deal(self, deal: Deal, prompt_template: str) -> EvaluationResult:
         """Evaluate a deal against user criteria using LLM."""
         # Format the prompt with deal information
         formatted_prompt = self._format_prompt(deal, prompt_template)
@@ -324,9 +315,7 @@ class LLMEvaluator:
         # Try primary provider first
         try:
             if self.primary_provider:
-                response = await self.primary_provider.evaluate(
-                    formatted_prompt
-                )
+                response = await self.primary_provider.evaluate(formatted_prompt)
                 return self._parse_evaluation_response(response)
         except Exception as e:
             logger.warning(f"Primary LLM provider failed: {e}")
@@ -335,19 +324,13 @@ class LLMEvaluator:
             if self.fallback_provider:
                 try:
                     logger.info("Attempting fallback LLM provider")
-                    response = await self.fallback_provider.evaluate(
-                        formatted_prompt
-                    )
+                    response = await self.fallback_provider.evaluate(formatted_prompt)
                     return self._parse_evaluation_response(response)
                 except Exception as fallback_error:
-                    logger.error(
-                        f"Fallback LLM provider also failed: {fallback_error}"
-                    )
+                    logger.error(f"Fallback LLM provider also failed: {fallback_error}")
 
             # If both providers fail, return a default evaluation
-            logger.error(
-                "All LLM providers failed, using keyword-based fallback"
-            )
+            logger.error("All LLM providers failed, using keyword-based fallback")
             return self._keyword_fallback_evaluation(deal, prompt_template)
 
     def _format_prompt(self, deal: Deal, template: str) -> str:
@@ -362,11 +345,12 @@ class LLMEvaluator:
             url=deal.url,
             votes=deal.votes or 0,
             comments=deal.comments or 0,
+            urgency_indicators=", ".join(deal.urgency_indicators)
+            if deal.urgency_indicators
+            else "None",
         )
 
-    def _parse_evaluation_response(
-        self, response: LLMResponse
-    ) -> EvaluationResult:
+    def _parse_evaluation_response(self, response: LLMResponse) -> EvaluationResult:
         """Parse LLM response into EvaluationResult."""
         content = response.content.strip()
 
@@ -377,9 +361,7 @@ class LLMEvaluator:
                 return EvaluationResult(
                     is_relevant=bool(data.get("is_relevant", False)),
                     confidence_score=float(data.get("confidence_score", 0.5)),
-                    reasoning=str(
-                        data.get("reasoning", "No reasoning provided")
-                    ),
+                    reasoning=str(data.get("reasoning", "No reasoning provided")),
                 )
         except (json.JSONDecodeError, KeyError, ValueError):
             pass
@@ -417,14 +399,10 @@ class LLMEvaluator:
         ]
 
         positive_score = sum(
-            1
-            for indicator in positive_indicators
-            if indicator in content_lower
+            1 for indicator in positive_indicators if indicator in content_lower
         )
         negative_score = sum(
-            1
-            for indicator in negative_indicators
-            if indicator in content_lower
+            1 for indicator in negative_indicators if indicator in content_lower
         )
 
         return positive_score > negative_score
@@ -439,15 +417,9 @@ class LLMEvaluator:
             for word in ["very confident", "definitely", "absolutely"]
         ):
             return 0.9
-        elif any(
-            word in content_lower
-            for word in ["confident", "likely", "probably"]
-        ):
+        elif any(word in content_lower for word in ["confident", "likely", "probably"]):
             return 0.7
-        elif any(
-            word in content_lower
-            for word in ["maybe", "possibly", "uncertain"]
-        ):
+        elif any(word in content_lower for word in ["maybe", "possibly", "uncertain"]):
             return 0.4
         else:
             return 0.5  # Default confidence

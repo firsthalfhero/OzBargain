@@ -33,8 +33,7 @@ class PriceExtractor:
         # $99.99, $1,234.56 (general dollar amounts)
         r"\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
         # 99.99, 1234.56 (when preceded by price indicators)
-        r"(?:price|cost|now|sale|deal)\s*:?\s*"
-        r"(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
+        r"(?:price|cost|now|sale|deal)\s*:?\s*" r"(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
     ]
 
     # Discount patterns
@@ -50,8 +49,7 @@ class PriceExtractor:
     # Original price patterns (was/originally/RRP)
     ORIGINAL_PRICE_PATTERNS = [
         r"\(was\s*\$?(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)\)",
-        r"(?:was|originally|rrp|retail)\s*:?\s*\$?"
-        r"(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)",
+        r"(?:was|originally|rrp|retail)\s*:?\s*\$?" r"(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)",
         r"rrp\s*\$?(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)",
     ]
 
@@ -69,25 +67,20 @@ class PriceExtractor:
         """Initialize price extractor."""
         # Compile regex patterns for better performance
         self.price_regexes = [
-            re.compile(pattern, re.IGNORECASE)
-            for pattern in self.PRICE_PATTERNS
+            re.compile(pattern, re.IGNORECASE) for pattern in self.PRICE_PATTERNS
         ]
         self.discount_regexes = [
-            re.compile(pattern, re.IGNORECASE)
-            for pattern in self.DISCOUNT_PATTERNS
+            re.compile(pattern, re.IGNORECASE) for pattern in self.DISCOUNT_PATTERNS
         ]
         self.original_price_regexes = [
             re.compile(pattern, re.IGNORECASE)
             for pattern in self.ORIGINAL_PRICE_PATTERNS
         ]
         self.urgency_regexes = [
-            re.compile(pattern, re.IGNORECASE)
-            for pattern in self.URGENCY_PATTERNS
+            re.compile(pattern, re.IGNORECASE) for pattern in self.URGENCY_PATTERNS
         ]
 
-    def extract_prices(
-        self, text: str
-    ) -> Tuple[Optional[float], Optional[float]]:
+    def extract_prices(self, text: str) -> Tuple[Optional[float], Optional[float]]:
         """
         Extract current price and original price from text.
 
@@ -164,9 +157,7 @@ class PriceExtractor:
             and original_price > 0
         ):
             if current_price < original_price:
-                discount = (
-                    (original_price - current_price) / original_price
-                ) * 100
+                discount = ((original_price - current_price) / original_price) * 100
                 return round(discount, 1)
 
         return None
@@ -277,9 +268,7 @@ class DealValidator:
         # Check price consistency
         if deal.price is not None and deal.original_price is not None:
             if deal.price > deal.original_price:
-                raise ValueError(
-                    "Current price cannot be higher than original price"
-                )
+                raise ValueError("Current price cannot be higher than original price")
 
         # Validate discount percentage consistency
         if (
@@ -343,20 +332,14 @@ class DealValidator:
             now = now.replace(tzinfo=None)
 
         # Check if timestamp is too far in the future (more than 1 day)
-        future_limit = now.replace(
-            hour=23, minute=59, second=59
-        ) + timedelta(days=1)
+        future_limit = now.replace(hour=23, minute=59, second=59) + timedelta(days=1)
         if deal_timestamp > future_limit:
-            raise ValueError(
-                f"Deal timestamp too far in future: {deal_timestamp}"
-            )
+            raise ValueError(f"Deal timestamp too far in future: {deal_timestamp}")
 
         # Check if timestamp is too old (more than 30 days)
         past_limit = now - timedelta(days=30)
         if deal_timestamp < past_limit:
-            logger.warning(
-                f"Deal timestamp is quite old: {deal_timestamp}"
-            )
+            logger.warning(f"Deal timestamp is quite old: {deal_timestamp}")
 
 
 class DealParser:
@@ -392,18 +375,16 @@ class DealParser:
 
             # Extract price information
             combined_text = f"{raw_deal.title} {raw_deal.description}"
-            current_price, original_price = (
-                self.price_extractor.extract_prices(combined_text)
+            current_price, original_price = self.price_extractor.extract_prices(
+                combined_text
             )
-            discount_percentage = (
-                self.price_extractor.extract_discount_percentage(
-                    combined_text, current_price, original_price
-                )
+            discount_percentage = self.price_extractor.extract_discount_percentage(
+                combined_text, current_price, original_price
             )
 
             # Extract urgency indicators
-            urgency_indicators = (
-                self.price_extractor.extract_urgency_indicators(combined_text)
+            urgency_indicators = self.price_extractor.extract_urgency_indicators(
+                combined_text
             )
 
             # Extract vote and comment counts from URL or description

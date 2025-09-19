@@ -8,7 +8,10 @@ import json
 from typing import Dict, Any, Optional
 
 from ..models.config import (
-    Configuration, UserCriteria, LLMProviderConfig, MessagingPlatformConfig
+    Configuration,
+    UserCriteria,
+    LLMProviderConfig,
+    MessagingPlatformConfig,
 )
 from ..interfaces import IConfigurationManager
 
@@ -36,7 +39,7 @@ class ConfigurationManager(IConfigurationManager):
             "config/config.json",
             "config.yaml",
             "config.yml",
-            "config.json"
+            "config.json",
         ]
 
         for path in possible_paths:
@@ -68,13 +71,11 @@ class ConfigurationManager(IConfigurationManager):
             FileNotFoundError: If configuration file doesn't exist.
         """
         if not os.path.exists(self.config_path):
-            raise FileNotFoundError(
-                f"Configuration file not found: {self.config_path}"
-            )
+            raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
 
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                if self.config_path.endswith('.json'):
+            with open(self.config_path, "r", encoding="utf-8") as f:
+                if self.config_path.endswith(".json"):
                     raw_config = json.load(f)
                 else:
                     raw_config = yaml.safe_load(f)
@@ -104,9 +105,7 @@ class ConfigurationManager(IConfigurationManager):
     def _expand_env_vars(self, obj: Any) -> Any:
         """Recursively expand environment variables in configuration."""
         if isinstance(obj, dict):
-            return {
-                key: self._expand_env_vars(value) for key, value in obj.items()
-            }
+            return {key: self._expand_env_vars(value) for key, value in obj.items()}
         elif isinstance(obj, list):
             return [self._expand_env_vars(item) for item in obj]
         elif isinstance(obj, str):
@@ -115,9 +114,7 @@ class ConfigurationManager(IConfigurationManager):
                 var_name = obj[2:-1]
                 env_value = os.getenv(var_name)
                 if env_value is None:
-                    raise ValueError(
-                        f"Environment variable '{var_name}' not found"
-                    )
+                    raise ValueError(f"Environment variable '{var_name}' not found")
                 return env_value
             return obj
         else:
@@ -129,9 +126,7 @@ class ConfigurationManager(IConfigurationManager):
             # Parse user criteria
             user_criteria_data = raw_config.get("user_criteria", {})
             user_criteria = UserCriteria(
-                prompt_template_path=user_criteria_data.get(
-                    "prompt_template", ""
-                ),
+                prompt_template_path=user_criteria_data.get("prompt_template", ""),
                 max_price=user_criteria_data.get("max_price"),
                 min_discount_percentage=user_criteria_data.get(
                     "min_discount_percentage"
@@ -140,7 +135,7 @@ class ConfigurationManager(IConfigurationManager):
                 keywords=user_criteria_data.get("keywords", []),
                 min_authenticity_score=user_criteria_data.get(
                     "min_authenticity_score", 0.5
-                )
+                ),
             )
 
             # Parse LLM provider config
@@ -148,7 +143,7 @@ class ConfigurationManager(IConfigurationManager):
             llm_provider = LLMProviderConfig(
                 type=llm_data.get("type", ""),
                 local=llm_data.get("local"),
-                api=llm_data.get("api")
+                api=llm_data.get("api"),
             )
 
             # Parse messaging platform config
@@ -158,7 +153,7 @@ class ConfigurationManager(IConfigurationManager):
                 telegram=messaging_data.get("telegram"),
                 whatsapp=messaging_data.get("whatsapp"),
                 discord=messaging_data.get("discord"),
-                slack=messaging_data.get("slack")
+                slack=messaging_data.get("slack"),
             )
 
             # Parse system settings
@@ -170,7 +165,7 @@ class ConfigurationManager(IConfigurationManager):
                 llm_provider=llm_provider,
                 messaging_platform=messaging_platform,
                 polling_interval=system_data.get("polling_interval", 120),
-                max_concurrent_feeds=system_data.get("max_concurrent_feeds", 10)
+                max_concurrent_feeds=system_data.get("max_concurrent_feeds", 10),
             )
 
         except KeyError as e:
@@ -201,8 +196,7 @@ class ConfigurationManager(IConfigurationManager):
 
         current_modified = os.path.getmtime(self.config_path)
 
-        if (self._last_modified is None or
-                current_modified > self._last_modified):
+        if self._last_modified is None or current_modified > self._last_modified:
             try:
                 self.load_config()
                 return True
@@ -229,8 +223,8 @@ class ConfigurationManager(IConfigurationManager):
             raise ValueError(f"Configuration file not found: {config_path}")
 
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                if config_path.endswith('.json'):
+            with open(config_path, "r", encoding="utf-8") as f:
+                if config_path.endswith(".json"):
                     raw_config = json.load(f)
                 else:
                     raw_config = yaml.safe_load(f)
@@ -263,7 +257,7 @@ class ConfigurationManager(IConfigurationManager):
         return {
             "rss_feeds": [
                 "https://www.ozbargain.com.au/deals/feed",
-                "https://www.ozbargain.com.au/cat/computing/feed"
+                "https://www.ozbargain.com.au/cat/computing/feed",
             ],
             "user_criteria": {
                 "prompt_template": "prompts/deal_evaluator.txt",
@@ -271,34 +265,26 @@ class ConfigurationManager(IConfigurationManager):
                 "min_discount_percentage": 20.0,
                 "categories": ["Electronics", "Computing"],
                 "keywords": ["laptop", "phone", "tablet"],
-                "min_authenticity_score": 0.6
+                "min_authenticity_score": 0.6,
             },
             "llm_provider": {
                 "type": "local",
-                "local": {
-                    "model": "llama2",
-                    "docker_image": "ollama/ollama"
-                },
+                "local": {"model": "llama2", "docker_image": "ollama/ollama"},
                 "api": {
                     "provider": "openai",
                     "api_key": "${OPENAI_API_KEY}",
-                    "model": "gpt-3.5-turbo"
-                }
+                    "model": "gpt-3.5-turbo",
+                },
             },
             "messaging_platform": {
                 "type": "telegram",
                 "telegram": {
                     "bot_token": "${TELEGRAM_BOT_TOKEN}",
-                    "chat_id": "${TELEGRAM_CHAT_ID}"
+                    "chat_id": "${TELEGRAM_CHAT_ID}",
                 },
-                "discord": {
-                    "webhook_url": "${DISCORD_WEBHOOK_URL}"
-                }
+                "discord": {"webhook_url": "${DISCORD_WEBHOOK_URL}"},
             },
-            "system": {
-                "polling_interval": 120,
-                "max_concurrent_feeds": 10
-            }
+            "system": {"polling_interval": 120, "max_concurrent_feeds": 10},
         }
 
     def load_configuration(self, config_path: str) -> Configuration:

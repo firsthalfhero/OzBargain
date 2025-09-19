@@ -10,6 +10,6 @@ from .config_manager import ConfigurationManager
 from .evaluation_service import EvaluationService
 
 __all__ = [
-    'ConfigurationManager',
-    'EvaluationService',
+    "ConfigurationManager",
+    "EvaluationService",
 ]

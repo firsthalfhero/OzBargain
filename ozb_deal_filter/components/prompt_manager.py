@@ -25,9 +25,7 @@ class PromptManager:
     def _ensure_prompts_directory(self) -> None:
         """Ensure prompts directory exists."""
         if not self.prompts_directory.exists():
-            logger.warning(
-                f"Prompts directory {self.prompts_directory} does not exist"
-            )
+            logger.warning(f"Prompts directory {self.prompts_directory} does not exist")
             return
 
         if not self.prompts_directory.is_dir():
@@ -49,9 +47,7 @@ class PromptManager:
 
         try:
             if not full_path.exists():
-                raise FileNotFoundError(
-                    f"Prompt template not found: {full_path}"
-                )
+                raise FileNotFoundError(f"Prompt template not found: {full_path}")
 
             with open(full_path, "r", encoding="utf-8") as f:
                 template_content = f.read().strip()
@@ -69,9 +65,7 @@ class PromptManager:
             return template_content
 
         except Exception as e:
-            logger.error(
-                f"Failed to load prompt template {template_path}: {e}"
-            )
+            logger.error(f"Failed to load prompt template {template_path}: {e}")
             raise RuntimeError(f"Failed to load prompt template: {e}")
 
     def _validate_template(self, template: str) -> None:
@@ -85,6 +79,7 @@ class PromptManager:
             "{url}",
             "{votes}",
             "{comments}",
+            "{urgency_indicators}",
         ]
 
         # Check for required placeholders
@@ -105,9 +100,7 @@ class PromptManager:
                 missing_optional.append(placeholder)
 
         if missing_optional:
-            logger.info(
-                f"Template missing optional placeholders: {missing_optional}"
-            )
+            logger.info(f"Template missing optional placeholders: {missing_optional}")
 
     def reload_template(self, template_path: str) -> str:
         """Reload a template from file, bypassing cache."""
@@ -124,9 +117,7 @@ class PromptManager:
 
         templates = []
         for file_path in self.prompts_directory.glob("*.txt"):
-            templates.append(
-                str(file_path.relative_to(self.prompts_directory))
-            )
+            templates.append(str(file_path.relative_to(self.prompts_directory)))
 
         return sorted(templates)
 
@@ -155,7 +146,7 @@ class PromptManager:
             "electronics, computing, or gaming products\n"
             "2. Consider the discount percentage, price point, and community "
             "engagement\n"
-            "3. Respond with either \"RELEVANT\" or \"NOT RELEVANT\" followed "
+            '3. Respond with either "RELEVANT" or "NOT RELEVANT" followed '
             "by your reasoning\n\n"
             "Your evaluation:"
         )
@@ -193,9 +184,7 @@ class PromptManager:
             return True
 
         except Exception as e:
-            logger.error(
-                f"Template validation failed for {template_path}: {e}"
-            )
+            logger.error(f"Template validation failed for {template_path}: {e}")
             return False
 
     def clear_cache(self) -> None:

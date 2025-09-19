@@ -187,8 +187,7 @@ class DealDetector:
 
             if parsed_feed.bozo:
                 logger.warning(
-                    f"RSS feed parsing warning: "
-                    f"{parsed_feed.bozo_exception}"
+                    f"RSS feed parsing warning: " f"{parsed_feed.bozo_exception}"
                 )
 
             new_deals = []
@@ -220,9 +219,7 @@ class DealDetector:
                     logger.error(f"Error processing RSS entry: {e}")
                     continue
 
-            logger.info(
-                f"Detected {len(new_deals)} new deals from RSS feed"
-            )
+            logger.info(f"Detected {len(new_deals)} new deals from RSS feed")
             return new_deals
 
         except Exception as e:
@@ -346,9 +343,7 @@ class RSSMonitor:
             return
 
         self.is_monitoring = True
-        logger.info(
-            f"Starting RSS monitoring for {len(self.feed_pollers)} feeds"
-        )
+        logger.info(f"Starting RSS monitoring for {len(self.feed_pollers)} feeds")
 
         # Start monitoring task
         self._monitor_task = asyncio.create_task(self._monitor_loop())
@@ -378,9 +373,7 @@ class RSSMonitor:
                         continue
 
                     if not poller.is_healthy():
-                        logger.error(
-                            f"Feed poller unhealthy, removing: {feed_url}"
-                        )
+                        logger.error(f"Feed poller unhealthy, removing: {feed_url}")
                         self.remove_feed(feed_url)
                         continue
 
