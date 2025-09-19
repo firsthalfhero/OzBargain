@@ -208,8 +208,10 @@ class ApplicationOrchestrator:
 
             # Initialize evaluation service
             self._evaluation_service = EvaluationService(
-                llm_evaluator=self._llm_evaluator,
-                prompt_template_path=self._config.user_criteria.prompt_template_path,
+                llm_config=self._config.llm_provider,
+                user_criteria=self._config.user_criteria,
+                prompts_directory="prompts",
+                evaluation_timeout=30,
             )
             self._component_health["evaluation_service"] = True
             self.logger.info("Evaluation service initialized")
