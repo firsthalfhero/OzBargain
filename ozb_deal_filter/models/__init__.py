@@ -16,6 +16,7 @@ from .config import (
     LLMProviderConfig,
     MessagingPlatformConfig,
 )
+from .git import CommitResult, GitStatus
 
 __all__ = [
     "Deal",
@@ -29,4 +30,6 @@ __all__ = [
     "UserCriteria",
     "LLMProviderConfig",
     "MessagingPlatformConfig",
+    "CommitResult",
+    "GitStatus",
 ]

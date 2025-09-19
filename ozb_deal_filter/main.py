@@ -18,13 +18,15 @@ async def async_main(config_path: Optional[str] = None):
     setup_logging(log_level="INFO")
     logger = get_logger("main")
 
-    logger.info("Starting OzBargain Deal Filter system", extra={"config_path": config_path})
+    logger.info(
+        "Starting OzBargain Deal Filter system", extra={"config_path": config_path}
+    )
 
     try:
         # Create and run the application orchestrator
         orchestrator = ApplicationOrchestrator(config_path)
         await orchestrator.run()
-        
+
     except Exception as e:
         logger.error("Application failed", extra={"error": str(e)}, exc_info=True)
         sys.exit(1)
@@ -33,11 +35,11 @@ async def async_main(config_path: Optional[str] = None):
 def main():
     """Main application entry point."""
     config_path = None
-    
+
     # Check for config path argument
     if len(sys.argv) > 1:
         config_path = sys.argv[1]
-    
+
     # Run the async application
     try:
         asyncio.run(async_main(config_path))

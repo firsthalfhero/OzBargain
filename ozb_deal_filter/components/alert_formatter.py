@@ -116,9 +116,7 @@ class AlertFormatter(IAlertFormatter):
             "whatsapp": self._format_whatsapp,
         }
 
-    def format_alert(
-        self, deal: Deal, filter_result: FilterResult
-    ) -> FormattedAlert:
+    def format_alert(self, deal: Deal, filter_result: FilterResult) -> FormattedAlert:
         """
         Format a deal into an alert message.
 
@@ -130,22 +128,16 @@ class AlertFormatter(IAlertFormatter):
             FormattedAlert: Formatted alert ready for delivery
         """
         # Calculate urgency level
-        urgency = self.urgency_calculator.calculate_urgency(
-            deal, filter_result
-        )
+        urgency = self.urgency_calculator.calculate_urgency(deal, filter_result)
 
         # Create base alert title
         title = self._create_alert_title(deal, urgency)
 
         # Create base alert message
-        message = self._create_alert_message(
-            deal, filter_result, urgency
-        )
+        message = self._create_alert_message(deal, filter_result, urgency)
 
         # Create platform-specific data
-        platform_data = self._create_platform_data(
-            deal, filter_result, urgency
-        )
+        platform_data = self._create_platform_data(deal, filter_result, urgency)
 
         alert = FormattedAlert(
             title=title,
@@ -226,15 +218,11 @@ class AlertFormatter(IAlertFormatter):
             if deal.comments is not None:
                 engagement_parts.append(f"{deal.comments} comments")
 
-            lines.append(
-                f"👥 **Community:** {', '.join(engagement_parts)}"
-            )
+            lines.append(f"👥 **Community:** {', '.join(engagement_parts)}")
 
         # Urgency indicators
         if deal.urgency_indicators:
-            lines.append(
-                f"⏰ **Urgency:** {', '.join(deal.urgency_indicators)}"
-            )
+            lines.append(f"⏰ **Urgency:** {', '.join(deal.urgency_indicators)}")
 
         # Description (truncated)
         if deal.description:
@@ -355,9 +343,7 @@ class AlertFormatter(IAlertFormatter):
                     f"({deal.discount_percentage:.0f}% off)"
                 )
 
-            fields.append(
-                {"name": "💰 Price", "value": price_value, "inline": True}
-            )
+            fields.append({"name": "💰 Price", "value": price_value, "inline": True})
 
         # Category field
         fields.append(
@@ -438,13 +424,9 @@ class AlertFormatter(IAlertFormatter):
                     f"({deal.discount_percentage:.0f}% off)"
                 )
 
-            fields.append(
-                {"type": "mrkdwn", "text": f"*💰 Price:*\n{price_text}"}
-            )
+            fields.append({"type": "mrkdwn", "text": f"*💰 Price:*\n{price_text}"})
 
-        fields.append(
-            {"type": "mrkdwn", "text": f"*📂 Category:*\n{deal.category}"}
-        )
+        fields.append({"type": "mrkdwn", "text": f"*📂 Category:*\n{deal.category}"})
 
         if filter_result.authenticity_score > 0:
             score_emoji = (

@@ -8,6 +8,7 @@ deal parsing, LLM evaluation, filtering, and message dispatching.
 from .llm_evaluator import LLMEvaluator, LocalLLMClient, APILLMClient, LLMProvider
 from .prompt_manager import PromptManager
 from .authenticity_assessor import AuthenticityAssessor
+from .git_agent import GitAgent
 
 __all__ = [
     "LLMEvaluator",
@@ -16,4 +17,5 @@ __all__ = [
     "LLMProvider",
     "PromptManager",
     "AuthenticityAssessor",
+    "GitAgent",
 ]

@@ -30,13 +30,13 @@ class TestUrgencyCalculator:
             timestamp=datetime.now(),
             votes=10,
             comments=5,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
         self.base_filter_result = FilterResult(
             passes_filters=True,
             price_match=True,
             authenticity_score=0.8,
-            urgency_level=UrgencyLevel.LOW
+            urgency_level=UrgencyLevel.LOW,
         )
 
     def test_calculate_urgency_from_indicators(self):
@@ -44,7 +44,7 @@ class TestUrgencyCalculator:
         # Test urgent indicators
         deal = self.base_deal
         deal.urgency_indicators = ["flash sale", "limited time"]
-        
+
         urgency = self.calculator.calculate_urgency(deal, self.base_filter_result)
         assert urgency == UrgencyLevel.URGENT
 
@@ -62,9 +62,9 @@ class TestUrgencyCalculator:
             timestamp=datetime.now(),
             votes=5,
             comments=2,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         urgency = self.calculator.calculate_urgency(deal, self.base_filter_result)
         assert urgency == UrgencyLevel.URGENT
 
@@ -82,9 +82,9 @@ class TestUrgencyCalculator:
             timestamp=datetime.now(),
             votes=8,
             comments=3,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         urgency = self.calculator.calculate_urgency(deal, self.base_filter_result)
         assert urgency == UrgencyLevel.HIGH
 
@@ -102,9 +102,9 @@ class TestUrgencyCalculator:
             timestamp=datetime.now(),
             votes=5,
             comments=2,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         urgency = self.calculator.calculate_urgency(deal, self.base_filter_result)
         assert urgency == UrgencyLevel.HIGH
 
@@ -122,9 +122,9 @@ class TestUrgencyCalculator:
             timestamp=datetime.now(),
             votes=5,
             comments=2,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         urgency = self.calculator.calculate_urgency(deal, self.base_filter_result)
         assert urgency == UrgencyLevel.MEDIUM
 
@@ -142,9 +142,9 @@ class TestUrgencyCalculator:
             timestamp=datetime.now(),
             votes=75,
             comments=20,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         urgency = self.calculator.calculate_urgency(deal, self.base_filter_result)
         assert urgency == UrgencyLevel.MEDIUM
 
@@ -162,9 +162,9 @@ class TestUrgencyCalculator:
             timestamp=datetime.now(),
             votes=5,
             comments=2,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         urgency = self.calculator.calculate_urgency(deal, self.base_filter_result)
         assert urgency == UrgencyLevel.LOW
 
@@ -187,19 +187,19 @@ class TestAlertFormatter:
             timestamp=datetime(2024, 1, 15, 14, 30, 0),
             votes=25,
             comments=8,
-            urgency_indicators=["limited time"]
+            urgency_indicators=["limited time"],
         )
         self.test_filter_result = FilterResult(
             passes_filters=True,
             price_match=True,
             authenticity_score=0.85,
-            urgency_level=UrgencyLevel.HIGH
+            urgency_level=UrgencyLevel.HIGH,
         )
 
     def test_format_alert_basic(self):
         """Test basic alert formatting."""
         alert = self.formatter.format_alert(self.test_deal, self.test_filter_result)
-        
+
         assert isinstance(alert, FormattedAlert)
         # The deal has "limited time" indicator, so it should be URGENT
         assert alert.title.startswith("🚨 URGENT:")
@@ -212,7 +212,7 @@ class TestAlertFormatter:
     def test_format_alert_validation(self):
         """Test that formatted alert passes validation."""
         alert = self.formatter.format_alert(self.test_deal, self.test_filter_result)
-        
+
         # Should not raise any validation errors
         assert alert.validate() is True
 
@@ -221,15 +221,15 @@ class TestAlertFormatter:
         # Test urgent
         title = self.formatter._create_alert_title(self.test_deal, UrgencyLevel.URGENT)
         assert title.startswith("🚨 URGENT:")
-        
+
         # Test high
         title = self.formatter._create_alert_title(self.test_deal, UrgencyLevel.HIGH)
         assert title.startswith("⚡ HIGH:")
-        
+
         # Test medium
         title = self.formatter._create_alert_title(self.test_deal, UrgencyLevel.MEDIUM)
         assert title.startswith("📢 MEDIUM:")
-        
+
         # Test low
         title = self.formatter._create_alert_title(self.test_deal, UrgencyLevel.LOW)
         assert title.startswith("💡 DEAL:")
@@ -248,9 +248,9 @@ class TestAlertFormatter:
             timestamp=datetime.now(),
             votes=5,
             comments=2,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         title = self.formatter._create_alert_title(long_title_deal, UrgencyLevel.LOW)
         assert len(title) <= 200  # Should be within reasonable limits
         # Check if truncation occurred by looking for "..." or checking if title was shortened
@@ -266,7 +266,7 @@ class TestAlertFormatter:
         message = self.formatter._create_alert_message(
             self.test_deal, self.test_filter_result, UrgencyLevel.HIGH
         )
-        
+
         # Check all expected components are present
         assert "**Amazing Electronics Deal - 50% Off!**" in message
         assert "💰 **Price:** $99.99" in message
@@ -293,20 +293,20 @@ class TestAlertFormatter:
             timestamp=datetime.now(),
             votes=None,
             comments=None,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
+
         minimal_filter = FilterResult(
             passes_filters=True,
             price_match=False,
             authenticity_score=0.0,
-            urgency_level=UrgencyLevel.LOW
+            urgency_level=UrgencyLevel.LOW,
         )
-        
+
         message = self.formatter._create_alert_message(
             minimal_deal, minimal_filter, UrgencyLevel.LOW
         )
-        
+
         # Should handle missing data gracefully
         assert "**Simple Deal**" in message
         assert "📂 **Category:** General" in message
@@ -321,13 +321,13 @@ class TestAlertFormatter:
         telegram_data = self.formatter._format_telegram(
             self.test_deal, self.test_filter_result, UrgencyLevel.HIGH
         )
-        
+
         assert "text" in telegram_data
         assert "parse_mode" in telegram_data
         assert telegram_data["parse_mode"] == "HTML"
         assert "reply_markup" in telegram_data
         assert "inline_keyboard" in telegram_data["reply_markup"]
-        
+
         # Check HTML formatting
         text = telegram_data["text"]
         assert "⚡ <b>Amazing Electronics Deal - 50% Off!</b>" in text
@@ -341,15 +341,15 @@ class TestAlertFormatter:
         discord_data = self.formatter._format_discord(
             self.test_deal, self.test_filter_result, UrgencyLevel.HIGH
         )
-        
+
         assert "embeds" in discord_data
         embed = discord_data["embeds"][0]
-        
+
         assert embed["title"] == "Amazing Electronics Deal - 50% Off!"
         assert embed["url"] == "https://example.com/deal/123"
         assert embed["color"] == 0xFF8C00  # Dark Orange for HIGH urgency
         assert "fields" in embed
-        
+
         # Check fields
         fields = embed["fields"]
         price_field = next(f for f in fields if f["name"] == "💰 Price")
@@ -362,18 +362,18 @@ class TestAlertFormatter:
         slack_data = self.formatter._format_slack(
             self.test_deal, self.test_filter_result, UrgencyLevel.HIGH
         )
-        
+
         assert "blocks" in slack_data
         assert "color" in slack_data
         assert slack_data["color"] == "warning"  # Warning color for HIGH urgency
-        
+
         blocks = slack_data["blocks"]
-        
+
         # Check header block
         header_block = blocks[0]
         assert header_block["type"] == "header"
         assert "⚡ Amazing Electronics Deal - 50% Off!" in header_block["text"]["text"]
-        
+
         # Check action block
         action_block = next(b for b in blocks if b["type"] == "actions")
         button = action_block["elements"][0]
@@ -384,10 +384,10 @@ class TestAlertFormatter:
         whatsapp_data = self.formatter._format_whatsapp(
             self.test_deal, self.test_filter_result, UrgencyLevel.HIGH
         )
-        
+
         assert "text" in whatsapp_data
         text = whatsapp_data["text"]
-        
+
         assert "⚡ *Amazing Electronics Deal - 50% Off!*" in text
         assert "💰 *Price:* $99.99" in text
         assert "_(was $199.99, 50% off)_" in text
@@ -400,7 +400,7 @@ class TestAlertFormatter:
         platform_data = self.formatter._create_platform_data(
             self.test_deal, self.test_filter_result, UrgencyLevel.HIGH
         )
-        
+
         expected_platforms = ["telegram", "discord", "slack", "whatsapp"]
         for platform in expected_platforms:
             assert platform in platform_data
@@ -408,21 +408,28 @@ class TestAlertFormatter:
 
     def test_format_alert_with_different_urgency_levels(self):
         """Test alert formatting with different urgency levels."""
-        urgency_levels = [UrgencyLevel.URGENT, UrgencyLevel.HIGH, UrgencyLevel.MEDIUM, UrgencyLevel.LOW]
-        
+        urgency_levels = [
+            UrgencyLevel.URGENT,
+            UrgencyLevel.HIGH,
+            UrgencyLevel.MEDIUM,
+            UrgencyLevel.LOW,
+        ]
+
         for urgency in urgency_levels:
             # Mock the urgency calculator to return specific urgency
-            self.formatter.urgency_calculator.calculate_urgency = Mock(return_value=urgency)
-            
+            self.formatter.urgency_calculator.calculate_urgency = Mock(
+                return_value=urgency
+            )
+
             alert = self.formatter.format_alert(self.test_deal, self.test_filter_result)
-            
+
             assert alert.urgency == urgency
             # Check that title reflects the urgency
             urgency_prefixes = {
                 UrgencyLevel.URGENT: "🚨 URGENT",
                 UrgencyLevel.HIGH: "⚡ HIGH",
                 UrgencyLevel.MEDIUM: "📢 MEDIUM",
-                UrgencyLevel.LOW: "💡 DEAL"
+                UrgencyLevel.LOW: "💡 DEAL",
             }
             expected_prefix = urgency_prefixes[urgency]
             assert alert.title.startswith(expected_prefix)
@@ -441,11 +448,13 @@ class TestAlertFormatter:
             timestamp=datetime.now(),
             votes=5,
             comments=2,
-            urgency_indicators=[]
+            urgency_indicators=[],
         )
-        
-        alert = self.formatter.format_alert(long_description_deal, self.test_filter_result)
-        
+
+        alert = self.formatter.format_alert(
+            long_description_deal, self.test_filter_result
+        )
+
         # Description should be truncated in the message
         assert "..." in alert.message
         # But should still be readable
@@ -458,30 +467,30 @@ class TestAlertFormatter:
             passes_filters=True,
             price_match=True,
             authenticity_score=0.8,
-            urgency_level=UrgencyLevel.LOW
+            urgency_level=UrgencyLevel.LOW,
         )
-        
+
         alert = self.formatter.format_alert(self.test_deal, high_auth_result)
         assert "✅ **Authenticity:** 80.0%" in alert.message
-        
+
         # Test medium authenticity (should show warning)
         medium_auth_result = FilterResult(
             passes_filters=True,
             price_match=True,
             authenticity_score=0.6,
-            urgency_level=UrgencyLevel.LOW
+            urgency_level=UrgencyLevel.LOW,
         )
-        
+
         alert = self.formatter.format_alert(self.test_deal, medium_auth_result)
         assert "⚠️ **Authenticity:** 60.0%" in alert.message
-        
+
         # Test low authenticity (should show red X)
         low_auth_result = FilterResult(
             passes_filters=True,
             price_match=True,
             authenticity_score=0.3,
-            urgency_level=UrgencyLevel.LOW
+            urgency_level=UrgencyLevel.LOW,
         )
-        
+
         alert = self.formatter.format_alert(self.test_deal, low_auth_result)
         assert "❌ **Authenticity:** 30.0%" in alert.message

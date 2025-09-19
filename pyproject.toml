@@ -1,0 +1,185 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ozb-deal-filter"
+version = "1.0.0"
+description = "OzBargain Deal Filter & Alert System"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "OzBargain Deal Filter Team"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "feedparser==6.0.10",
+    "requests==2.31.0",
+    "pyyaml==6.0.1",
+    "python-dateutil==2.8.2",
+    "pydantic==2.5.0",
+    "beautifulsoup4==4.12.2",
+    "openai==1.3.0",
+    "anthropic==0.7.0",
+    "python-telegram-bot==20.7",
+    "discord-webhook==1.3.0",
+    "docker==6.1.3",
+    "GitPython==3.1.40",
+    "structlog==23.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "pytest-mock==3.12.0",
+    "pytest-cov==4.1.0",
+    "black==23.11.0",
+    "flake8==6.1.0",
+    "mypy==1.7.1",
+    "pre-commit==3.6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/example/ozb-deal-filter"
+Repository = "https://github.com/example/ozb-deal-filter"
+Issues = "https://github.com/example/ozb-deal-filter/issues"
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=ozb_deal_filter",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+    "--cov-fail-under=85",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["ozb_deal_filter"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/env/*",
+    "setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "feedparser.*",
+    "discord_webhook.*",
+    "telegram.*",
+    "docker.*",
+    "git.*",
+]
+ignore_missing_imports = true
+
+# Flake8 configuration (in setup.cfg format since flake8 doesn't support pyproject.toml)
+# This will be created separately
+
+# isort configuration
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["ozb_deal_filter"]
+known_third_party = [
+    "feedparser",
+    "requests",
+    "yaml",
+    "dateutil",
+    "pydantic",
+    "bs4",
+    "openai",
+    "anthropic",
+    "telegram",
+    "discord_webhook",
+    "docker",
+    "git",
+    "structlog",
+    "pytest",
+]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+# Bandit security configuration
+[tool.bandit]
+exclude_dirs = ["tests", "venv", "env"]
+skips = ["B101", "B601"]  # Skip assert_used and shell_injection_process_args for tests
