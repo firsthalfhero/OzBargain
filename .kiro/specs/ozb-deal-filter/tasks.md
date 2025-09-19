@@ -128,7 +128,10 @@
 
 
 
-  - [x] 6.1 Create alert formatting system
+
+  - [-] 6.1 Create alert formatting system
+
+
 
 
 

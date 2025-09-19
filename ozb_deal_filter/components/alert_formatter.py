@@ -5,8 +5,7 @@ This module provides functionality to format deals into rich alert messages
 with platform-specific formatting and urgency level determination.
 """
 
-from typing import Dict, Any
-from datetime import datetime
+from typing import Dict, Any, List
 
 from ..interfaces import IAlertFormatter
 from ..models.deal import Deal
@@ -63,7 +62,7 @@ class UrgencyCalculator:
 
         Args:
             deal: The deal to assess
-            filter_result: Filter results containing authenticity and price info
+            filter_result: Filter results containing authenticity and price
 
         Returns:
             UrgencyLevel: Calculated urgency level
@@ -91,11 +90,13 @@ class UrgencyCalculator:
                 return UrgencyLevel.MEDIUM
 
         # Calculate based on price threshold
-        if deal.price and deal.price <= 50:  # Very cheap deals might be urgent
+        if deal.price and deal.price <= 50:
+            # Very cheap deals might be urgent
             return UrgencyLevel.MEDIUM
 
         # Calculate based on community engagement
-        if deal.votes and deal.votes >= 50:  # Highly voted deals
+        if deal.votes and deal.votes >= 50:
+            # Highly voted deals
             return UrgencyLevel.MEDIUM
 
         # Default to low urgency
@@ -115,7 +116,9 @@ class AlertFormatter(IAlertFormatter):
             "whatsapp": self._format_whatsapp,
         }
 
-    def format_alert(self, deal: Deal, filter_result: FilterResult) -> FormattedAlert:
+    def format_alert(
+        self, deal: Deal, filter_result: FilterResult
+    ) -> FormattedAlert:
         """
         Format a deal into an alert message.
 
@@ -127,16 +130,22 @@ class AlertFormatter(IAlertFormatter):
             FormattedAlert: Formatted alert ready for delivery
         """
         # Calculate urgency level
-        urgency = self.urgency_calculator.calculate_urgency(deal, filter_result)
+        urgency = self.urgency_calculator.calculate_urgency(
+            deal, filter_result
+        )
 
         # Create base alert title
         title = self._create_alert_title(deal, urgency)
 
         # Create base alert message
-        message = self._create_alert_message(deal, filter_result, urgency)
+        message = self._create_alert_message(
+            deal, filter_result, urgency
+        )
 
         # Create platform-specific data
-        platform_data = self._create_platform_data(deal, filter_result, urgency)
+        platform_data = self._create_platform_data(
+            deal, filter_result, urgency
+        )
 
         alert = FormattedAlert(
             title=title,
@@ -185,7 +194,10 @@ class AlertFormatter(IAlertFormatter):
             price_line = f"💰 **Price:** ${deal.price:.2f}"
 
             if deal.original_price and deal.discount_percentage:
-                price_line += f" (was ${deal.original_price:.2f}, {deal.discount_percentage:.0f}% off)"
+                price_line += (
+                    f" (was ${deal.original_price:.2f}, "
+                    f"{deal.discount_percentage:.0f}% off)"
+                )
 
             lines.append(price_line)
 
@@ -202,7 +214,8 @@ class AlertFormatter(IAlertFormatter):
                 else "❌"
             )
             lines.append(
-                f"{score_emoji} **Authenticity:** {filter_result.authenticity_score:.1%}"
+                f"{score_emoji} **Authenticity:** "
+                f"{filter_result.authenticity_score:.1%}"
             )
 
         # Community engagement
@@ -213,11 +226,15 @@ class AlertFormatter(IAlertFormatter):
             if deal.comments is not None:
                 engagement_parts.append(f"{deal.comments} comments")
 
-            lines.append(f"👥 **Community:** {', '.join(engagement_parts)}")
+            lines.append(
+                f"👥 **Community:** {', '.join(engagement_parts)}"
+            )
 
         # Urgency indicators
         if deal.urgency_indicators:
-            lines.append(f"⏰ **Urgency:** {', '.join(deal.urgency_indicators)}")
+            lines.append(
+                f"⏰ **Urgency:** {', '.join(deal.urgency_indicators)}"
+            )
 
         # Description (truncated)
         if deal.description:
@@ -272,7 +289,10 @@ class AlertFormatter(IAlertFormatter):
         if deal.price is not None:
             price_text = f"💰 <b>Price:</b> ${deal.price:.2f}"
             if deal.original_price and deal.discount_percentage:
-                price_text += f" <i>(was ${deal.original_price:.2f}, {deal.discount_percentage:.0f}% off)</i>"
+                price_text += (
+                    f" <i>(was ${deal.original_price:.2f}, "
+                    f"{deal.discount_percentage:.0f}% off)</i>"
+                )
             message_lines.append(price_text)
 
         # Category
@@ -288,7 +308,8 @@ class AlertFormatter(IAlertFormatter):
                 else "❌"
             )
             message_lines.append(
-                f"{score_emoji} <b>Authenticity:</b> {filter_result.authenticity_score:.1%}"
+                f"{score_emoji} <b>Authenticity:</b> "
+                f"{filter_result.authenticity_score:.1%}"
             )
 
         # Link as button
@@ -316,27 +337,35 @@ class AlertFormatter(IAlertFormatter):
             UrgencyLevel.LOW: 0x00FF00,  # Green
         }
 
+        fields: List[Dict[str, Any]] = []
         embed = {
             "title": deal.title,
             "url": deal.url,
             "color": color_map.get(urgency, 0x00FF00),
             "timestamp": deal.timestamp.isoformat(),
-            "fields": [],
+            "fields": fields,
         }
 
         # Price field
         if deal.price is not None:
             price_value = f"${deal.price:.2f}"
             if deal.original_price and deal.discount_percentage:
-                price_value += f"\n~~${deal.original_price:.2f}~~ ({deal.discount_percentage:.0f}% off)"
+                price_value += (
+                    f"\n~~${deal.original_price:.2f}~~ "
+                    f"({deal.discount_percentage:.0f}% off)"
+                )
 
-            embed["fields"].append(
+            fields.append(
                 {"name": "💰 Price", "value": price_value, "inline": True}
             )
 
         # Category field
-        embed["fields"].append(
-            {"name": "📂 Category", "value": deal.category, "inline": True}
+        fields.append(
+            {
+                "name": "📂 Category",
+                "value": deal.category,
+                "inline": True,
+            }
         )
 
         # Authenticity field
@@ -348,7 +377,7 @@ class AlertFormatter(IAlertFormatter):
                 if filter_result.authenticity_score >= 0.5
                 else "❌"
             )
-            embed["fields"].append(
+            fields.append(
                 {
                     "name": f"{score_emoji} Authenticity",
                     "value": f"{filter_result.authenticity_score:.1%}",
@@ -377,7 +406,7 @@ class AlertFormatter(IAlertFormatter):
             UrgencyLevel.LOW: "#36a64f",
         }
 
-        blocks = []
+        blocks: List[Dict[str, Any]] = []
 
         # Header block
         urgency_emoji = {
@@ -391,21 +420,31 @@ class AlertFormatter(IAlertFormatter):
         blocks.append(
             {
                 "type": "header",
-                "text": {"type": "plain_text", "text": f"{emoji} {deal.title}"},
+                "text": {
+                    "type": "plain_text",
+                    "text": f"{emoji} {deal.title}",
+                },
             }
         )
 
         # Fields section
-        fields = []
+        fields: List[Dict[str, str]] = []
 
         if deal.price is not None:
             price_text = f"${deal.price:.2f}"
             if deal.original_price and deal.discount_percentage:
-                price_text += f"\n~${deal.original_price:.2f}~ ({deal.discount_percentage:.0f}% off)"
+                price_text += (
+                    f"\n~${deal.original_price:.2f}~ "
+                    f"({deal.discount_percentage:.0f}% off)"
+                )
 
-            fields.append({"type": "mrkdwn", "text": f"*💰 Price:*\n{price_text}"})
+            fields.append(
+                {"type": "mrkdwn", "text": f"*💰 Price:*\n{price_text}"}
+            )
 
-        fields.append({"type": "mrkdwn", "text": f"*📂 Category:*\n{deal.category}"})
+        fields.append(
+            {"type": "mrkdwn", "text": f"*📂 Category:*\n{deal.category}"}
+        )
 
         if filter_result.authenticity_score > 0:
             score_emoji = (
@@ -418,7 +457,10 @@ class AlertFormatter(IAlertFormatter):
             fields.append(
                 {
                     "type": "mrkdwn",
-                    "text": f"*{score_emoji} Authenticity:*\n{filter_result.authenticity_score:.1%}",
+                    "text": (
+                        f"*{score_emoji} Authenticity:*\n"
+                        f"{filter_result.authenticity_score:.1%}"
+                    ),
                 }
             )
 
@@ -456,7 +498,10 @@ class AlertFormatter(IAlertFormatter):
             }
         )
 
-        return {"blocks": blocks, "color": color_map.get(urgency, "#36a64f")}
+        return {
+            "blocks": blocks,
+            "color": color_map.get(urgency, "#36a64f"),
+        }
 
     def _format_whatsapp(
         self, deal: Deal, filter_result: FilterResult, urgency: UrgencyLevel
@@ -481,7 +526,10 @@ class AlertFormatter(IAlertFormatter):
         if deal.price is not None:
             price_text = f"💰 *Price:* ${deal.price:.2f}"
             if deal.original_price and deal.discount_percentage:
-                price_text += f" _(was ${deal.original_price:.2f}, {deal.discount_percentage:.0f}% off)_"
+                price_text += (
+                    f" _(was ${deal.original_price:.2f}, "
+                    f"{deal.discount_percentage:.0f}% off)_"
+                )
             lines.append(price_text)
 
         # Category
@@ -497,7 +545,8 @@ class AlertFormatter(IAlertFormatter):
                 else "❌"
             )
             lines.append(
-                f"{score_emoji} *Authenticity:* {filter_result.authenticity_score:.1%}"
+                f"{score_emoji} *Authenticity:* "
+                f"{filter_result.authenticity_score:.1%}"
             )
 
         # Description (short)
