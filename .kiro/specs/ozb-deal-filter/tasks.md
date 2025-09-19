@@ -192,6 +192,9 @@
 
 
 
+
+
+
     - Write Dockerfile with Python 3.11 and dependencies
     - Create docker-compose.yml with service definitions
     - Add volume mounts for configuration and logs
