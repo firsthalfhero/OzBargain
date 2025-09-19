@@ -100,13 +100,14 @@
 -
 
 
-  - [ ] 5.1 Create price and discount filtering
+  - [x] 5.1 Create price and discount filtering
+
+
 
 
     - Implement PriceFilter with threshold checking
     - Add discount percentage validation logic
-    - Create filter result data structures
-
+    - Create FilterEngine component implementing IFilterEngine interface
     - Write unit tests for various price scenarios
     - _Requirements: 4.1, 4.2, 4.3, 4.5_
 
@@ -251,6 +252,8 @@
     - _Requirements: 9.1, 9.2, 9.3, 9.5, 9.6_
 
 - [x] 10. Create end-to-end testing and validation
+
+
 
 
 

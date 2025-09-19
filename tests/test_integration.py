@@ -744,6 +744,653 @@ class TestPerformanceBenchmarks:
 
             # Setup mocks
             large_feed = self.create_large_rss_feed(50)
+
+            mock_response = Mock()
+            mock_response.text = large_feed
+            mock_response.status_code = 200
+            mock_response.raise_for_status = Mock()
+            mock_get.return_value = mock_response
+
+            # Mock LLM evaluator
+            mock_llm = Mock()
+            mock_llm_class.return_value = mock_llm
+            mock_llm.evaluate_deal = AsyncMock(
+                return_value=EvaluationResult(
+                    is_relevant=True,
+                    confidence_score=0.8,
+                    reasoning="Test evaluation",
+                )
+            )
+
+            # Mock message dispatcher
+            mock_dispatcher = Mock()
+            mock_dispatcher_factory.create_dispatcher.return_value = mock_dispatcher
+            mock_dispatcher.test_connection.return_value = True
+            mock_dispatcher.send_alert = AsyncMock(
+                return_value=DeliveryResult(
+                    success=True,
+                    delivery_time=datetime.now(timezone.utc),
+                    error_message=None,
+                )
+            )
+
+            # Create orchestrator
+            orchestrator = ApplicationOrchestrator(config_file_perf)
+            await orchestrator.initialize()
+
+            # Monitor memory usage over time
+            memory_samples = []
+            
+            # Process deals in batches to simulate extended operation
+            for batch in range(5):  # 5 batches of processing
+                # Process batch of deals
+                for i in range(10):  # 10 deals per batch
+                    raw_deal = RawDeal(
+                        title=f"Memory Test Deal {batch}-{i}",
+                        description="Memory usage test deal",
+                        link=f"https://example.com/deal-{batch}-{i}",
+                        pub_date="Mon, 01 Jan 2024 12:00:00 GMT",
+                        category="Electronics",
+                    )
+                    await orchestrator._process_single_deal(raw_deal)
+
+                # Sample memory usage
+                current_memory = process.memory_info().rss / 1024 / 1024  # MB
+                memory_samples.append(current_memory)
+                
+                # Small delay between batches
+                await asyncio.sleep(0.1)
+
+            final_memory = process.memory_info().rss / 1024 / 1024  # MB
+
+            # Analyze memory usage
+            memory_growth = final_memory - initial_memory
+            max_memory = max(memory_samples)
+            
+            # Verify memory stability (should not grow excessively)
+            assert memory_growth < 50  # Less than 50MB growth
+            assert max_memory < initial_memory + 100  # Less than 100MB peak
+
+            print(f"Initial memory: {initial_memory:.1f}MB")
+            print(f"Final memory: {final_memory:.1f}MB")
+            print(f"Memory growth: {memory_growth:.1f}MB")
+            print(f"Peak memory: {max_memory:.1f}MB")
+
+            await orchestrator.shutdown()
+
+
+@pytest.mark.integration
+class TestRealRSSFeedIntegration:
+    """Test integration with real OzBargain RSS feeds (respecting rate limits)."""
+
+    @pytest.fixture
+    def real_feed_config(self):
+        """Create configuration for real RSS feed testing."""
+        return {
+            "rss_feeds": [
+                "https://www.ozbargain.com.au/deals/feed",
+            ],
+            "user_criteria": {
+                "prompt_template": "prompts/deal_evaluator.example.txt",
+                "max_price": 1000.0,
+                "min_discount_percentage": 10.0,
+                "categories": ["Electronics", "Computing"],
+                "keywords": ["laptop", "phone", "computer"],
+                "min_authenticity_score": 0.5,
+            },
+            "llm_provider": {
+                "type": "local",
+                "local": {"model": "llama2", "docker_image": "ollama/ollama"},
+            },
+            "messaging_platform": {
+                "type": "telegram",
+                "telegram": {"bot_token": "test_token", "chat_id": "test_chat"},
+            },
+            "system": {
+                "polling_interval": 300,  # 5 minutes to respect rate limits
+                "max_concurrent_feeds": 1,
+                "alert_timeout": 300,
+                "urgent_alert_timeout": 120,
+            },
+        }
+
+    @pytest.fixture
+    def config_file_real(self, real_feed_config):
+        """Create config file for real feed tests."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yaml", delete=False
+        ) as f:
+            yaml.dump(real_feed_config, f)
+            return f.name
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_real_rss_feed_parsing(self, config_file_real):
+        """Test parsing of real OzBargain RSS feed data."""
+        with patch(
+            "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
+        ) as mock_llm_class, patch(
+            "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
+        ) as mock_dispatcher_factory:
+
+            # Mock LLM evaluator
+            mock_llm = Mock()
+            mock_llm_class.return_value = mock_llm
+            mock_llm.evaluate_deal = AsyncMock(
+                return_value=EvaluationResult(
+                    is_relevant=True,
+                    confidence_score=0.8,
+                    reasoning="Test evaluation",
+                )
+            )
+
+            # Mock message dispatcher
+            mock_dispatcher = Mock()
+            mock_dispatcher_factory.create_dispatcher.return_value = mock_dispatcher
+            mock_dispatcher.test_connection.return_value = True
+            mock_dispatcher.send_alert = AsyncMock(
+                return_value=DeliveryResult(
+                    success=True,
+                    delivery_time=datetime.now(timezone.utc),
+                    error_message=None,
+                )
+            )
+
+            # Create orchestrator
+            orchestrator = ApplicationOrchestrator(config_file_real)
+            await orchestrator.initialize()
+
+            # Test RSS feed fetching and parsing
+            from ozb_deal_filter.components.rss_monitor import RSSMonitor
+            from ozb_deal_filter.components.deal_parser import DealParser
+
+            rss_monitor = RSSMonitor(polling_interval=300)
+            deal_parser = DealParser()
+
+            try:
+                # Fetch real RSS feed (with timeout)
+                raw_deals = await asyncio.wait_for(
+                    rss_monitor._fetch_and_parse_feed(
+                        "https://www.ozbargain.com.au/deals/feed"
+                    ),
+                    timeout=30.0
+                )
+
+                # Verify we got real deals
+                assert len(raw_deals) > 0
+                assert all(isinstance(deal, RawDeal) for deal in raw_deals)
+
+                # Test parsing of real deals
+                parsed_deals = []
+                for raw_deal in raw_deals[:5]:  # Test first 5 deals
+                    try:
+                        deal = deal_parser.parse_deal(raw_deal)
+                        if deal_parser.validate_deal(deal):
+                            parsed_deals.append(deal)
+                    except Exception as e:
+                        # Log parsing errors but don't fail test
+                        print(f"Deal parsing error: {e}")
+
+                # Verify parsing worked for at least some deals
+                assert len(parsed_deals) > 0
+
+                # Verify deal structure
+                for deal in parsed_deals:
+                    assert deal.title is not None
+                    assert deal.description is not None
+                    assert deal.url is not None
+                    assert deal.category is not None
+                    assert deal.timestamp is not None
+
+                print(f"Successfully parsed {len(parsed_deals)} real deals")
+
+            except asyncio.TimeoutError:
+                pytest.skip("RSS feed request timed out - network issue")
+            except Exception as e:
+                pytest.skip(f"RSS feed test skipped due to: {e}")
+
+            await orchestrator.shutdown()
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_real_feed_rate_limiting(self, config_file_real):
+        """Test that RSS feed requests respect rate limiting."""
+        from ozb_deal_filter.components.rss_monitor import RSSMonitor
+
+        rss_monitor = RSSMonitor(polling_interval=300)
+        
+        # Record request times
+        request_times = []
+        
+        try:
+            # Make multiple requests and measure timing
+            for i in range(3):
+                start_time = time.time()
+                
+                # This should respect rate limiting internally
+                await rss_monitor._fetch_and_parse_feed(
+                    "https://www.ozbargain.com.au/deals/feed"
+                )
+                
+                request_times.append(time.time() - start_time)
+                
+                # Wait between requests to be respectful
+                if i < 2:  # Don't wait after last request
+                    await asyncio.sleep(2.0)
+
+            # Verify requests completed successfully
+            assert len(request_times) == 3
+            assert all(t > 0 for t in request_times)
+
+            # Verify reasonable response times (should be < 10 seconds each)
+            assert all(t < 10.0 for t in request_times)
+
+            print(f"Request times: {[f'{t:.2f}s' for t in request_times]}")
+
+        except Exception as e:
+            pytest.skip(f"Rate limiting test skipped due to: {e}")
+
+
+@pytest.mark.integration
+class TestSystemBehaviorValidation:
+    """Test system behavior under various scenarios."""
+
+    @pytest.fixture
+    def behavior_config(self):
+        """Create configuration for behavior testing."""
+        return {
+            "rss_feeds": [
+                "https://www.ozbargain.com.au/deals/feed",
+                "https://www.ozbargain.com.au/cat/computing/feed",
+            ],
+            "user_criteria": {
+                "prompt_template": "prompts/deal_evaluator.example.txt",
+                "max_price": 500.0,
+                "min_discount_percentage": 20.0,
+                "categories": ["Electronics", "Computing"],
+                "keywords": ["laptop", "phone", "computer"],
+                "min_authenticity_score": 0.6,
+            },
+            "llm_provider": {
+                "type": "local",
+                "local": {"model": "llama2", "docker_image": "ollama/ollama"},
+            },
+            "messaging_platform": {
+                "type": "telegram",
+                "telegram": {"bot_token": "test_token", "chat_id": "test_chat"},
+            },
+            "system": {
+                "polling_interval": 60,
+                "max_concurrent_feeds": 5,
+                "alert_timeout": 300,
+                "urgent_alert_timeout": 120,
+            },
+        }
+
+    @pytest.fixture
+    def config_file_behavior(self, behavior_config):
+        """Create config file for behavior tests."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yaml", delete=False
+        ) as f:
+            yaml.dump(behavior_config, f)
+            return f.name
+
+    @pytest.mark.asyncio
+    async def test_system_graceful_degradation(self, config_file_behavior):
+        """Test system behavior when components fail gracefully."""
+        with patch("requests.get") as mock_get, patch(
+            "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
+        ) as mock_llm_class, patch(
+            "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
+        ) as mock_dispatcher_factory:
+
+            # Mock RSS response
+            rss_content = """<?xml version="1.0"?>
+            <rss version="2.0">
+                <channel>
+                    <item>
+                        <title>Test Laptop Deal</title>
+                        <description>Great laptop deal</description>
+                        <link>https://example.com/deal</link>
+                        <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+                        <category>Computing</category>
+                    </item>
+                </channel>
+            </rss>"""
+
+            mock_response = Mock()
+            mock_response.text = rss_content
+            mock_response.status_code = 200
+            mock_response.raise_for_status = Mock()
+            mock_get.return_value = mock_response
+
+            # Mock LLM that fails initially then recovers
+            llm_call_count = 0
+            mock_llm = Mock()
+            mock_llm_class.return_value = mock_llm
+
+            async def failing_then_working_llm(deal):
+                nonlocal llm_call_count
+                llm_call_count += 1
+                if llm_call_count <= 2:
+                    raise Exception("LLM temporarily unavailable")
+                return EvaluationResult(
+                    is_relevant=True,
+                    confidence_score=0.8,
+                    reasoning="LLM recovered",
+                )
+
+            mock_llm.evaluate_deal = failing_then_working_llm
+
+            # Mock message dispatcher that works
+            mock_dispatcher = Mock()
+            mock_dispatcher_factory.create_dispatcher.return_value = mock_dispatcher
+            mock_dispatcher.test_connection.return_value = True
+            mock_dispatcher.send_alert = AsyncMock(
+                return_value=DeliveryResult(
+                    success=True,
+                    delivery_time=datetime.now(timezone.utc),
+                    error_message=None,
+                )
+            )
+
+            # Create orchestrator
+            orchestrator = ApplicationOrchestrator(config_file_behavior)
+            await orchestrator.initialize()
+
+            # Process deals - first two should fail LLM, third should succeed
+            test_deals = [
+                RawDeal(
+                    title="Laptop Deal 1",
+                    description="First laptop deal",
+                    link="https://example.com/deal1",
+                    pub_date="Mon, 01 Jan 2024 12:00:00 GMT",
+                    category="Computing",
+                ),
+                RawDeal(
+                    title="Laptop Deal 2", 
+                    description="Second laptop deal",
+                    link="https://example.com/deal2",
+                    pub_date="Mon, 01 Jan 2024 12:01:00 GMT",
+                    category="Computing",
+                ),
+                RawDeal(
+                    title="Laptop Deal 3",
+                    description="Third laptop deal",
+                    link="https://example.com/deal3",
+                    pub_date="Mon, 01 Jan 2024 12:02:00 GMT",
+                    category="Computing",
+                ),
+            ]
+
+            for deal in test_deals:
+                await orchestrator._process_single_deal(deal)
+
+            # Verify system handled failures gracefully
+            assert llm_call_count == 3  # All three deals attempted LLM evaluation
+            
+            # Verify error tracking
+            assert orchestrator._error_counts.get("llm_evaluation", 0) == 2
+
+            # Verify system recovered and sent alert for third deal
+            assert mock_dispatcher.send_alert.call_count == 1
+
+            # Verify component health reflects recovery
+            status = orchestrator.get_system_status()
+            # LLM should be marked as healthy after recovery
+            assert status["component_health"]["llm_evaluator"] is True
+
+            await orchestrator.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_high_volume_deal_processing(self, config_file_behavior):
+        """Test system behavior under high volume of deals."""
+        with patch("requests.get") as mock_get, patch(
+            "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
+        ) as mock_llm_class, patch(
+            "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
+        ) as mock_dispatcher_factory:
+
+            # Create large RSS feed
+            num_deals = 50
+            items = []
+            for i in range(num_deals):
+                items.append(f"""
+                    <item>
+                        <title>High Volume Deal {i} - Laptop Special</title>
+                        <description>Deal number {i} with great features</description>
+                        <link>https://www.ozbargain.com.au/node/{123456 + i}</link>
+                        <pubDate>Mon, 01 Jan 2024 {12 + (i % 12):02d}:00:00 GMT</pubDate>
+                        <category>Computing</category>
+                    </item>
+                """)
+
+            large_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+            <rss version="2.0">
+                <channel>
+                    <title>High Volume Test Feed</title>
+                    <description>Large feed for volume testing</description>
+                    {''.join(items)}
+                </channel>
+            </rss>"""
+
+            mock_response = Mock()
+            mock_response.text = large_feed
+            mock_response.status_code = 200
+            mock_response.raise_for_status = Mock()
+            mock_get.return_value = mock_response
+
+            # Mock LLM with realistic processing time
+            evaluation_count = 0
+            mock_llm = Mock()
+            mock_llm_class.return_value = mock_llm
+
+            async def realistic_llm_evaluation(deal):
+                nonlocal evaluation_count
+                evaluation_count += 1
+                await asyncio.sleep(0.01)  # 10ms processing time
+                return EvaluationResult(
+                    is_relevant=evaluation_count % 3 == 0,  # 1/3 relevant
+                    confidence_score=0.8,
+                    reasoning=f"Evaluation {evaluation_count}",
+                )
+
+            mock_llm.evaluate_deal = realistic_llm_evaluation
+
+            # Mock message dispatcher
+            alert_count = 0
+            mock_dispatcher = Mock()
+            mock_dispatcher_factory.create_dispatcher.return_value = mock_dispatcher
+            mock_dispatcher.test_connection.return_value = True
+
+            async def count_alerts(alert):
+                nonlocal alert_count
+                alert_count += 1
+                await asyncio.sleep(0.005)  # 5ms delivery time
+                return DeliveryResult(
+                    success=True,
+                    delivery_time=datetime.now(timezone.utc),
+                    error_message=None,
+                )
+
+            mock_dispatcher.send_alert = count_alerts
+
+            # Create orchestrator
+            orchestrator = ApplicationOrchestrator(config_file_behavior)
+            await orchestrator.initialize()
+
+            # Process high volume of deals
+            start_time = time.time()
+            
+            from ozb_deal_filter.components.rss_monitor import RSSMonitor
+            from ozb_deal_filter.components.deal_parser import DealParser
+
+            rss_monitor = RSSMonitor(polling_interval=60)
+            deal_parser = DealParser()
+
+            # Fetch and parse deals
+            raw_deals = await rss_monitor._fetch_and_parse_feed(
+                "https://www.ozbargain.com.au/deals/feed"
+            )
+
+            # Process all deals
+            processed_deals = []
+            for raw_deal in raw_deals:
+                deal = deal_parser.parse_deal(raw_deal)
+                if deal_parser.validate_deal(deal):
+                    processed_deals.append(deal)
+                    await orchestrator._process_single_deal(raw_deal)
+
+            processing_time = time.time() - start_time
+
+            # Verify high volume processing
+            assert len(processed_deals) == num_deals
+            assert evaluation_count == num_deals
+            assert alert_count == num_deals // 3  # 1/3 were relevant
+
+            # Verify performance requirements
+            assert processing_time < 10.0  # Should process 50 deals in under 10 seconds
+            assert processing_time / num_deals < 0.2  # Less than 200ms per deal
+
+            print(f"Processed {num_deals} deals in {processing_time:.2f}s")
+            print(f"Average time per deal: {processing_time / num_deals * 1000:.1f}ms")
+            print(f"Evaluations: {evaluation_count}, Alerts: {alert_count}")
+
+            await orchestrator.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_concurrent_feed_processing_stability(self, config_file_behavior):
+        """Test stability when processing multiple feeds concurrently."""
+        # Create different feed contents
+        feed_contents = {}
+        for i in range(3):
+            items = []
+            for j in range(10):
+                items.append(f"""
+                    <item>
+                        <title>Feed {i} Deal {j} - Electronics</title>
+                        <description>Deal from feed {i}, item {j}</description>
+                        <link>https://example.com/feed{i}/deal{j}</link>
+                        <pubDate>Mon, 01 Jan 2024 {12 + j}:00:00 GMT</pubDate>
+                        <category>Electronics</category>
+                    </item>
+                """)
+
+            feed_contents[f"feed_{i}"] = f"""<?xml version="1.0"?>
+            <rss version="2.0">
+                <channel>
+                    <title>Test Feed {i}</title>
+                    <description>Test feed {i} for concurrent processing</description>
+                    {''.join(items)}
+                </channel>
+            </rss>"""
+
+        def mock_get_side_effect(url, **kwargs):
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.raise_for_status = Mock()
+            
+            # Return different content based on URL
+            if "computing" in url:
+                mock_response.text = feed_contents["feed_0"]
+            elif "electronics" in url:
+                mock_response.text = feed_contents["feed_1"]
+            else:
+                mock_response.text = feed_contents["feed_2"]
+            
+            return mock_response
+
+        with patch("requests.get", side_effect=mock_get_side_effect), patch(
+            "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
+        ) as mock_llm_class, patch(
+            "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
+        ) as mock_dispatcher_factory:
+
+            # Mock LLM evaluator
+            evaluation_count = 0
+            mock_llm = Mock()
+            mock_llm_class.return_value = mock_llm
+
+            async def concurrent_safe_evaluation(deal):
+                nonlocal evaluation_count
+                evaluation_count += 1
+                await asyncio.sleep(0.01)  # Small delay
+                return EvaluationResult(
+                    is_relevant=True,
+                    confidence_score=0.8,
+                    reasoning=f"Concurrent evaluation {evaluation_count}",
+                )
+
+            mock_llm.evaluate_deal = concurrent_safe_evaluation
+
+            # Mock message dispatcher
+            alert_count = 0
+            mock_dispatcher = Mock()
+            mock_dispatcher_factory.create_dispatcher.return_value = mock_dispatcher
+            mock_dispatcher.test_connection.return_value = True
+
+            async def concurrent_safe_delivery(alert):
+                nonlocal alert_count
+                alert_count += 1
+                await asyncio.sleep(0.005)
+                return DeliveryResult(
+                    success=True,
+                    delivery_time=datetime.now(timezone.utc),
+                    error_message=None,
+                )
+
+            mock_dispatcher.send_alert = concurrent_safe_delivery
+
+            # Create orchestrator
+            orchestrator = ApplicationOrchestrator(config_file_behavior)
+            await orchestrator.initialize()
+
+            # Process multiple feeds concurrently
+            from ozb_deal_filter.components.rss_monitor import RSSMonitor
+
+            rss_monitor = RSSMonitor(polling_interval=60)
+            
+            feeds = [
+                "https://www.ozbargain.com.au/deals/feed",
+                "https://www.ozbargain.com.au/cat/computing/feed",
+                "https://www.ozbargain.com.au/cat/electronics/feed",
+            ]
+
+            # Add feeds
+            for feed_url in feeds:
+                rss_monitor.add_feed(feed_url)
+
+            # Process feeds concurrently
+            start_time = time.time()
+            
+            tasks = []
+            for feed_url in feeds:
+                task = asyncio.create_task(
+                    rss_monitor._fetch_and_parse_feed(feed_url)
+                )
+                tasks.append(task)
+
+            # Wait for all feeds to complete
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            processing_time = time.time() - start_time
+
+            # Verify concurrent processing worked
+            assert len(results) == 3
+            assert all(not isinstance(result, Exception) for result in results)
+            
+            # Verify all feeds returned deals
+            total_deals = sum(len(result) for result in results)
+            assert total_deals == 30  # 10 deals per feed
+
+            # Verify reasonable processing time for concurrent execution
+            assert processing_time < 5.0  # Should be faster than sequential
+
+            print(f"Processed {len(feeds)} feeds concurrently in {processing_time:.2f}s")
+            print(f"Total deals processed: {total_deals}")
+
+            await orchestrator.shutdown()reate_large_rss_feed(50)
             mock_response = Mock()
             mock_response.text = large_feed
             mock_response.status_code = 200

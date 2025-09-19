@@ -9,6 +9,7 @@ from .llm_evaluator import LLMEvaluator, LocalLLMClient, APILLMClient, LLMProvid
 from .prompt_manager import PromptManager
 from .authenticity_assessor import AuthenticityAssessor
 from .git_agent import GitAgent
+from .filter_engine import FilterEngine, PriceFilter
 
 __all__ = [
     "LLMEvaluator",
@@ -18,4 +19,6 @@ __all__ = [
     "PromptManager",
     "AuthenticityAssessor",
     "GitAgent",
+    "FilterEngine",
+    "PriceFilter",
 ]
