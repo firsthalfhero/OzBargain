@@ -11,10 +11,10 @@ requires-python = ">=3.11"
 authors = [
     {name = "OzBargain Deal Filter Team"}
 ]
+license = {text = "MIT"}
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -41,16 +41,31 @@ dev = [
     "pytest-asyncio==0.21.1",
     "pytest-mock==3.12.0",
     "pytest-cov==4.1.0",
+    "pytest-xdist==3.5.0",
+    "pytest-benchmark==4.0.0",
+    "pytest-html==4.1.1",
+    "pytest-json-report==1.5.0",
     "black==23.11.0",
     "flake8==6.1.0",
+    "flake8-docstrings==1.7.0",
+    "flake8-bugbear==23.12.2",
+    "flake8-comprehensions==3.14.0",
     "mypy==1.7.1",
+    "bandit[toml]==1.7.5",
+    "isort==5.13.2",
     "pre-commit==3.6.0",
+    "coverage[toml]==7.3.4",
+    "tox==4.11.4",
 ]
 
 [project.urls]
 Homepage = "https://github.com/example/ozb-deal-filter"
 Repository = "https://github.com/example/ozb-deal-filter"
 Issues = "https://github.com/example/ozb-deal-filter/issues"
+
+[tool.setuptools.packages.find]
+include = ["ozb_deal_filter*"]
+exclude = ["tests*", "docs*", "scripts*"]
 
 # Black configuration
 [tool.black]
@@ -83,6 +98,10 @@ addopts = [
     "--cov-report=html:htmlcov",
     "--cov-report=xml",
     "--cov-fail-under=85",
+    "--html=reports/pytest_report.html",
+    "--self-contained-html",
+    "--json-report",
+    "--json-report-file=reports/pytest_report.json",
 ]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
@@ -92,12 +111,17 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "benchmark: marks tests as performance benchmarks",
+    "network: marks tests that require network access",
+    "docker: marks tests that require Docker",
 ]
 filterwarnings = [
     "error",
     "ignore::UserWarning",
     "ignore::DeprecationWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
+asyncio_mode = "auto"
 
 # Coverage configuration
 [tool.coverage.run]

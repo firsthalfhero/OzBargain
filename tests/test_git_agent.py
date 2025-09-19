@@ -212,7 +212,9 @@ class TestGitAgent:
 
     @patch.object(GitAgent, "get_status")
     @patch("subprocess.run")
-    def test_commit_changes_success(self, mock_run: Mock, mock_get_status: Mock, git_agent: GitAgent) -> None:
+    def test_commit_changes_success(
+        self, mock_run: Mock, mock_get_status: Mock, git_agent: GitAgent
+    ) -> None:
         """Test successful commit operation."""
         # Mock status with staged files
         mock_status = GitStatus(
@@ -241,7 +243,9 @@ class TestGitAgent:
         assert result is True
 
     @patch.object(GitAgent, "get_status")
-    def test_commit_changes_no_staged_files(self, mock_get_status: Mock, git_agent: GitAgent) -> None:
+    def test_commit_changes_no_staged_files(
+        self, mock_get_status: Mock, git_agent: GitAgent
+    ) -> None:
         """Test commit with no staged files."""
         # Mock status with no staged files
         mock_status = GitStatus(
@@ -258,7 +262,9 @@ class TestGitAgent:
 
     @patch.object(GitAgent, "get_status")
     @patch("subprocess.run")
-    def test_commit_changes_failure(self, mock_run: Mock, mock_get_status: Mock, git_agent: GitAgent) -> None:
+    def test_commit_changes_failure(
+        self, mock_run: Mock, mock_get_status: Mock, git_agent: GitAgent
+    ) -> None:
         """Test failed commit operation."""
         # Mock status with staged files
         mock_status = GitStatus(
@@ -281,7 +287,9 @@ class TestGitAgent:
 
     @patch.object(GitAgent, "get_status")
     @patch("subprocess.run")
-    def test_commit_with_details_success(self, mock_run: Mock, mock_get_status: Mock, git_agent: GitAgent) -> None:
+    def test_commit_with_details_success(
+        self, mock_run: Mock, mock_get_status: Mock, git_agent: GitAgent
+    ) -> None:
         """Test detailed commit operation success."""
         # Mock status with staged files
         mock_status = GitStatus(
@@ -312,7 +320,9 @@ class TestGitAgent:
         assert result.error_message is None
 
     @patch.object(GitAgent, "get_status")
-    def test_commit_with_details_no_staged_files(self, mock_get_status: Mock, git_agent: GitAgent) -> None:
+    def test_commit_with_details_no_staged_files(
+        self, mock_get_status: Mock, git_agent: GitAgent
+    ) -> None:
         """Test detailed commit with no staged files."""
         # Mock status with no staged files
         mock_status = GitStatus(
@@ -331,7 +341,9 @@ class TestGitAgent:
 
     @patch.object(GitAgent, "stage_files")
     @patch.object(GitAgent, "commit_with_details")
-    def test_auto_commit_task_success(self, mock_commit: Mock, mock_stage: Mock, git_agent: GitAgent) -> None:
+    def test_auto_commit_task_success(
+        self, mock_commit: Mock, mock_stage: Mock, git_agent: GitAgent
+    ) -> None:
         """Test successful auto commit task."""
         mock_stage.return_value = True
 
@@ -353,7 +365,9 @@ class TestGitAgent:
         assert result == expected_result
 
     @patch.object(GitAgent, "stage_files")
-    def test_auto_commit_task_staging_failure(self, mock_stage: Mock, git_agent: GitAgent) -> None:
+    def test_auto_commit_task_staging_failure(
+        self, mock_stage: Mock, git_agent: GitAgent
+    ) -> None:
         """Test auto commit task with staging failure."""
         mock_stage.return_value = False
 
@@ -363,7 +377,9 @@ class TestGitAgent:
         assert result.error_message == "Failed to stage changes"
 
     @patch.object(GitAgent, "commit_with_details")
-    def test_auto_commit_task_with_specific_files(self, mock_commit: Mock, git_agent: GitAgent) -> None:
+    def test_auto_commit_task_with_specific_files(
+        self, mock_commit: Mock, git_agent: GitAgent
+    ) -> None:
         """Test auto commit task with specific files."""
         expected_result = CommitResult(
             success=True,
