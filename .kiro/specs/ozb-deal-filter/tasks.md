@@ -65,7 +65,8 @@
     - _Requirements: 1.2, 4.1, 4.4_
 
 
-- [x] 4. Develop LLM evaluation system
+- [ ] 4. Develop LLM evaluation system
+
 
 
 
@@ -90,8 +91,13 @@
     - Add timeout handling and error recovery
     - Write integration tests with actual LLM providers
     - _Requirements: 3.2, 3.5, 3.6_
+-
+
+
+
 
 - [ ] 5. Implement filtering and authenticity assessment
+-
 
 
   - [ ] 5.1 Create price and discount filtering
@@ -100,10 +106,13 @@
     - Implement PriceFilter with threshold checking
     - Add discount percentage validation logic
     - Create filter result data structures
+
     - Write unit tests for various price scenarios
     - _Requirements: 4.1, 4.2, 4.3, 4.5_
 
-  - [ ] 5.2 Build authenticity assessment system
+  - [x] 5.2 Build authenticity assessment system
+
+
 
 
     - Implement AuthenticityAssessor using OzBargain community data
