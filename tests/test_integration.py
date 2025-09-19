@@ -1390,7 +1390,7 @@ class TestSystemBehaviorValidation:
             print(f"Processed {len(feeds)} feeds concurrently in {processing_time:.2f}s")
             print(f"Total deals processed: {total_deals}")
 
-            await orchestrator.shutdown()reate_large_rss_feed(50)
+            await orchestrator.shutdown()
             mock_response = Mock()
             mock_response.text = large_feed
             mock_response.status_code = 200
@@ -1786,3 +1786,52 @@ class TestSystemBehaviorValidation:
 
             # Cleanup
             Path(config_file).unlink(missing_ok=True)
+
+
+@pytest.mark.integration
+class TestErrorRecoveryScenarios:
+    """Test system error recovery and resilience scenarios."""
+
+    @pytest.fixture
+    def recovery_config(self):
+        """Create configuration for error recovery testing."""
+        return {
+            "rss_feeds": ["https://www.ozbargain.com.au/deals/feed"],
+            "user_criteria": {
+                "prompt_template": "prompts/deal_evaluator.example.txt",
+                "max_price": 500.0,
+                "min_discount_percentage": 20.0,
+                "categories": ["Electronics"],
+                "keywords": ["laptop"],
+                "min_authenticity_score": 0.6,
+            },
+            "llm_provider": {
+                "type": "local",
+                "local": {"model": "llama2", "docker_image": "ollama/ollama"},
+            },
+            "messaging_platform": {
+                "type": "telegram",
+                "telegram": {"bot_token": "test_token", "chat_id": "test_chat"},
+            },
+            "system": {
+                "polling_interval": 60,
+                "max_concurrent_feeds": 5,
+                "alert_timeout": 300,
+                "urgent_alert_timeout": 120,
+            },
+        }
+
+    @pytest.fixture
+    def config_file_recovery(self, recovery_config):
+        """Create config file for recovery tests."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yaml", delete=False
+        ) as f:
+            yaml.dump(recovery_config, f)
+            return f.name
+
+    @pytest.mark.asyncio
+    async def test_network_failure_recovery(self, config_file_recovery):
+        """Test recovery from network failures."""
+        request_count = 0
+        

@@ -407,12 +407,11 @@ class ApplicationOrchestrator:
         except Exception as e:
             self.logger.error(f"Error updating components config: {e}")
 
-    def _handle_new_deals(self, new_deals: List[RawDeal]) -> None:
+    async def _handle_new_deals(self, new_deals: List[RawDeal]) -> None:
         """
         Handle new deals from RSS monitor (callback method).
 
         This method is called by the RSS monitor when new deals are detected.
-        It runs in a thread pool, so we need to schedule async processing.
         """
         if not new_deals:
             return
@@ -422,8 +421,8 @@ class ApplicationOrchestrator:
             extra={"deal_count": len(new_deals)},
         )
 
-        # Schedule async processing
-        asyncio.create_task(self._process_deals_async(new_deals))
+        # Process deals asynchronously
+        await self._process_deals_async(new_deals)
 
     async def _process_deals_async(self, new_deals: List[RawDeal]) -> None:
         """Process new deals asynchronously."""
@@ -591,7 +590,7 @@ class ApplicationOrchestrator:
         from .models.filter import FilterResult, UrgencyLevel
 
         # Determine urgency
-        urgency = UrgencyLevel.NORMAL
+        urgency = UrgencyLevel.LOW
         if deal.discount_percentage and deal.discount_percentage > 50:
             urgency = UrgencyLevel.HIGH
         elif (

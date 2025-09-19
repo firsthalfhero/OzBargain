@@ -7,7 +7,7 @@ for network timeouts and invalid feeds.
 
 import asyncio
 import logging
-from typing import List, Dict, Set, Optional, Callable
+from typing import List, Dict, Set, Optional, Callable, Union, Awaitable
 from datetime import datetime
 import hashlib
 
@@ -263,7 +263,7 @@ class RSSMonitor:
         self,
         polling_interval: int = 120,
         max_concurrent_feeds: int = 10,
-        deal_callback: Optional[Callable[[List[RawDeal]], None]] = None,
+        deal_callback: Optional[Union[Callable[[List[RawDeal]], None], Callable[[List[RawDeal]], Awaitable[None]]]] = None,
     ):
         """
         Initialize RSS monitor.
@@ -399,8 +399,7 @@ class RSSMonitor:
         """
         try:
             # Fetch feed content (run in thread pool to avoid blocking)
-            loop = asyncio.get_event_loop()
-            feed_content = await loop.run_in_executor(None, poller.fetch_feed)
+            feed_content = await asyncio.get_running_loop().run_in_executor(None, poller.fetch_feed)
 
             if feed_content is None:
                 return
@@ -415,7 +414,11 @@ class RSSMonitor:
 
             if new_deals and self.deal_callback:
                 # Call callback with new deals
-                await loop.run_in_executor(None, self.deal_callback, new_deals)
+                # Check if callback is async or sync
+                if asyncio.iscoroutinefunction(self.deal_callback):
+                    await self.deal_callback(new_deals)
+                else:
+                    await loop.run_in_executor(None, self.deal_callback, new_deals)
 
         except Exception as e:
             logger.error(f"Error processing feed {feed_url}: {e}")
