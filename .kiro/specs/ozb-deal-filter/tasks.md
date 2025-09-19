@@ -115,16 +115,22 @@
 
 
 
+
     - Implement AuthenticityAssessor using OzBargain community data
     - Create authenticity scoring algorithm
     - Add handling for deals without community data
     - Write unit tests for authenticity calculations
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+-
 
-- [ ] 6. Develop alert formatting and messaging
+- [x] 6. Develop alert formatting and messaging
 
 
-  - [ ] 6.1 Create alert formatting system
+
+
+  - [x] 6.1 Create alert formatting system
+
+
 
 
     - Implement AlertFormatter with rich message templates
@@ -133,7 +139,9 @@
     - Write unit tests for message formatting
     - _Requirements: 6.2, 6.6_
 
-  - [ ] 6.2 Build messaging platform integration
+  - [x] 6.2 Build messaging platform integration
+
+
 
     - Implement IMessageDispatcher protocol interface
     - Create TelegramDispatcher with Bot API integration
