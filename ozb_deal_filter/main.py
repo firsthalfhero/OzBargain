@@ -3,34 +3,49 @@ Main entry point for the OzBargain Deal Filter system.
 """
 
 import sys
+import asyncio
 import logging
 from pathlib import Path
+from typing import Optional
+
+from .orchestrator import ApplicationOrchestrator
+from .utils.logging import setup_logging, get_logger
 
 
-def setup_logging():
-    """Set up structured logging for the application."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler("logs/ozb_deal_filter.log"),
-        ],
-    )
+async def async_main(config_path: Optional[str] = None):
+    """Async main application entry point."""
+    # Setup structured logging
+    setup_logging(log_level="INFO")
+    logger = get_logger("main")
+
+    logger.info("Starting OzBargain Deal Filter system", extra={"config_path": config_path})
+
+    try:
+        # Create and run the application orchestrator
+        orchestrator = ApplicationOrchestrator(config_path)
+        await orchestrator.run()
+        
+    except Exception as e:
+        logger.error("Application failed", extra={"error": str(e)}, exc_info=True)
+        sys.exit(1)
 
 
 def main():
     """Main application entry point."""
-    setup_logging()
-    logger = logging.getLogger(__name__)
-
-    logger.info("Starting OzBargain Deal Filter system...")
-
-    # TODO: Initialize configuration manager
-    # TODO: Initialize and start all components
-    # TODO: Set up signal handlers for graceful shutdown
-
-    logger.info("System initialization complete")
+    config_path = None
+    
+    # Check for config path argument
+    if len(sys.argv) > 1:
+        config_path = sys.argv[1]
+    
+    # Run the async application
+    try:
+        asyncio.run(async_main(config_path))
+    except KeyboardInterrupt:
+        print("\nShutdown requested by user")
+    except Exception as e:
+        print(f"Fatal error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
