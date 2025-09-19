@@ -29,7 +29,13 @@
 
 
 
-  - [ ] 3.1 Implement RSS feed monitoring
+
+
+
+  - [-] 3.1 Implement RSS feed monitoring
+
+
+
 
     - Create RSSMonitor class with feed polling logic
     - Implement FeedPoller for individual feed management
@@ -39,13 +45,18 @@
     - Write unit tests with mocked RSS responses
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
+
+
+
   - [ ] 3.2 Create deal parsing and extraction
+
 
     - Implement DealParser to convert RSS entries to Deal objects
     - Create PriceExtractor for price and discount information
     - Add DealValidator for parsed deal validation
     - Write unit tests with real OzBargain RSS data samples
     - _Requirements: 1.2, 4.1, 4.4_
+
 
 - [ ] 4. Develop LLM evaluation system
 

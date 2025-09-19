@@ -65,7 +65,7 @@ class ILLMEvaluator(Protocol):
         """Evaluate a deal against user criteria using LLM."""
         ...
     
-    def set_llm_provider(self, provider: 'LLMProvider') -> None:
+    def set_llm_provider(self, provider_config: 'LLMProviderConfig') -> None:
         """Set the LLM provider for evaluations."""
         ...
 
