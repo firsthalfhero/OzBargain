@@ -183,6 +183,7 @@ class Configuration:
     messaging_platform: MessagingPlatformConfig
     polling_interval: int
     max_concurrent_feeds: int
+    max_deal_age_hours: int = 24  # Only process deals newer than this many hours
 
     def validate(self) -> bool:
         """Validate system configuration."""
@@ -221,6 +222,16 @@ class Configuration:
 
         if self.max_concurrent_feeds > 50:
             raise ValueError("Max concurrent feeds cannot exceed 50")
+
+        # Validate max deal age hours
+        if (
+            not isinstance(self.max_deal_age_hours, int)
+            or self.max_deal_age_hours <= 0
+        ):
+            raise ValueError("Max deal age hours must be a positive integer")
+
+        if self.max_deal_age_hours > 168:  # 1 week
+            raise ValueError("Max deal age hours cannot exceed 168 (1 week)")
 
         # Validate nested configurations
         self.user_criteria.validate()

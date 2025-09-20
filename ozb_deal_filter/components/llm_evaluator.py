@@ -68,9 +68,13 @@ class LocalLLMClient(LLMProvider):
 
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
-        self.base_url = config.get("base_url", "http://localhost:11434")
+        import os
+        # Use config first, then environment variable, then localhost fallback
+        self.base_url = config.get("base_url") or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         self.model = config["model"]
         self.docker_image = config["docker_image"]
+        # Use timeout from config, with a higher default for local LLM
+        self.timeout = config.get("timeout", 60)
 
     async def evaluate(self, prompt: str) -> LLMResponse:
         """Evaluate prompt using local Ollama model."""
@@ -85,7 +89,8 @@ class LocalLLMClient(LLMProvider):
                 "options": {
                     "temperature": 0.1,  # Low temp for consistency
                     "top_p": 0.9,
-                    "num_predict": 500,  # Limit response length
+                    "num_predict": 100,  # Shorter response for faster processing
+                    "num_ctx": 2048,     # Smaller context window
                 },
             }
 

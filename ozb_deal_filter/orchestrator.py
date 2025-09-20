@@ -186,6 +186,7 @@ class ApplicationOrchestrator:
             # Initialize RSS monitor with callback
             self._rss_monitor = RSSMonitor(
                 polling_interval=self._config.polling_interval,
+                max_deal_age_hours=self._config.max_deal_age_hours,
                 deal_callback=self._handle_new_deals,
             )
 
@@ -215,6 +216,12 @@ class ApplicationOrchestrator:
             )
             self._component_health["evaluation_service"] = True
             self.logger.info("Evaluation service initialized")
+
+            # Initialize filter engine
+            from .components.filter_engine import FilterEngine
+            self._filter_engine = FilterEngine(self._config.user_criteria)
+            self._component_health["filter_engine"] = True
+            self.logger.info("Filter engine initialized")
 
             # Initialize alert formatter
             self._alert_formatter = AlertFormatter()
@@ -559,52 +566,52 @@ class ApplicationOrchestrator:
     async def _apply_filters(
         self, deal: Deal, evaluation: EvaluationResult
     ) -> FilterResult:
-        """Apply price, discount, and authenticity filters."""
-        # For now, implement basic filtering logic
-        # This would be replaced with proper FilterEngine component
+        """Apply price, discount, and authenticity filters using FilterEngine."""
+        if self._filter_engine:
+            return self._filter_engine.apply_filters(deal, evaluation)
+        else:
+            # Fallback to basic filtering if FilterEngine is not available
+            from .models.filter import FilterResult, UrgencyLevel
+            
+            passes_price = True
+            if self._config.user_criteria.max_price is not None and deal.price is not None:
+                passes_price = deal.price <= self._config.user_criteria.max_price
 
-        passes_price = True
-        if self._config.user_criteria.max_price is not None and deal.price is not None:
-            passes_price = deal.price <= self._config.user_criteria.max_price
+            passes_discount = True
+            if (
+                self._config.user_criteria.min_discount_percentage is not None
+                and deal.discount_percentage is not None
+            ):
+                passes_discount = (
+                    deal.discount_percentage
+                    >= self._config.user_criteria.min_discount_percentage
+                )
 
-        passes_discount = True
-        if (
-            self._config.user_criteria.min_discount_percentage is not None
-            and deal.discount_percentage is not None
-        ):
-            passes_discount = (
-                deal.discount_percentage
-                >= self._config.user_criteria.min_discount_percentage
+            # Basic authenticity score
+            authenticity_score = 0.7
+            if deal.votes is not None and deal.comments is not None:
+                authenticity_score = min(1.0, (deal.votes + deal.comments) / 20.0)
+
+            passes_authenticity = (
+                authenticity_score >= self._config.user_criteria.min_authenticity_score
             )
 
-        # Basic authenticity score (would be improved with proper component)
-        authenticity_score = 0.7
-        if deal.votes is not None and deal.comments is not None:
-            # Simple scoring based on community engagement
-            authenticity_score = min(1.0, (deal.votes + deal.comments) / 20.0)
+            # Determine urgency
+            urgency = UrgencyLevel.LOW
+            if deal.discount_percentage and deal.discount_percentage > 50:
+                urgency = UrgencyLevel.HIGH
+            elif (
+                "limited time" in deal.title.lower()
+                or "expires" in deal.description.lower()
+            ):
+                urgency = UrgencyLevel.URGENT
 
-        passes_authenticity = (
-            authenticity_score >= self._config.user_criteria.min_authenticity_score
-        )
-
-        from .models.filter import FilterResult, UrgencyLevel
-
-        # Determine urgency
-        urgency = UrgencyLevel.LOW
-        if deal.discount_percentage and deal.discount_percentage > 50:
-            urgency = UrgencyLevel.HIGH
-        elif (
-            "limited time" in deal.title.lower()
-            or "expires" in deal.description.lower()
-        ):
-            urgency = UrgencyLevel.URGENT
-
-        return FilterResult(
-            passes_filters=passes_price and passes_discount and passes_authenticity,
-            price_match=passes_price,
-            authenticity_score=authenticity_score,
-            urgency_level=urgency,
-        )
+            return FilterResult(
+                passes_filters=passes_price and passes_discount and passes_authenticity,
+                price_match=passes_price,
+                authenticity_score=authenticity_score,
+                urgency_level=urgency,
+            )
 
     async def _health_check(self) -> None:
         """Perform periodic health checks on components."""
