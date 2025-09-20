@@ -115,7 +115,9 @@ class ConfigurationManager(IConfigurationManager):
                 var_name = obj[2:-1]
                 env_value = os.getenv(var_name)
                 if env_value is None:
-                    raise ValueError(f"Environment variable '{var_name}' not found")
+                    # For optional environment variables, return a placeholder
+                    # The validation logic will handle whether this is actually needed
+                    return f"__MISSING_ENV_VAR_{var_name}__"
                 return env_value
             return obj
         else:
