@@ -7,15 +7,14 @@ error recovery, and comprehensive deal assessment capabilities.
 
 import asyncio
 import logging
-from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
 from ..components.llm_evaluator import LLMEvaluator
 from ..components.prompt_manager import PromptManager
+from ..models.config import LLMProviderConfig, UserCriteria
 from ..models.deal import Deal
 from ..models.evaluation import EvaluationResult
-from ..models.config import LLMProviderConfig, UserCriteria
-
 
 logger = logging.getLogger(__name__)
 

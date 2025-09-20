@@ -2,22 +2,23 @@
 Unit tests for data model validation.
 """
 
-import pytest
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict
+
+import pytest
 
 from ozb_deal_filter.models import (
-    Deal,
-    RawDeal,
     Configuration,
-    UserCriteria,
-    LLMProviderConfig,
-    MessagingPlatformConfig,
+    Deal,
+    DeliveryResult,
     EvaluationResult,
     FilterResult,
-    UrgencyLevel,
     FormattedAlert,
-    DeliveryResult,
+    LLMProviderConfig,
+    MessagingPlatformConfig,
+    RawDeal,
+    UrgencyLevel,
+    UserCriteria,
 )
 
 

@@ -2,15 +2,16 @@
 Unit tests for configuration management system.
 """
 
-import pytest
+import json
 import os
 import tempfile
-import yaml
-import json
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
-from ozb_deal_filter.services.config_manager import ConfigurationManager
+import pytest
+import yaml
+
 from ozb_deal_filter.models.config import Configuration
+from ozb_deal_filter.services.config_manager import ConfigurationManager
 
 
 class TestConfigurationManager:

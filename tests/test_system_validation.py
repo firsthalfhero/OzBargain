@@ -5,21 +5,22 @@ This module provides tests for health check endpoints, metrics collection,
 alert delivery validation, and system startup validation.
 """
 
-import pytest
 import asyncio
-import time
 import tempfile
-import yaml
-from unittest.mock import Mock, AsyncMock, patch
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
+import time
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List
+from unittest.mock import AsyncMock, Mock, patch
 
-from ozb_deal_filter.orchestrator import ApplicationOrchestrator
+import pytest
+import yaml
+
+from ozb_deal_filter.models.alert import FormattedAlert
 from ozb_deal_filter.models.deal import Deal, RawDeal
+from ozb_deal_filter.models.delivery import DeliveryResult
 from ozb_deal_filter.models.evaluation import EvaluationResult
 from ozb_deal_filter.models.filter import FilterResult, UrgencyLevel
-from ozb_deal_filter.models.alert import FormattedAlert
-from ozb_deal_filter.models.delivery import DeliveryResult
+from ozb_deal_filter.orchestrator import ApplicationOrchestrator
 
 
 @pytest.mark.integration
@@ -58,9 +59,7 @@ class TestHealthCheckEndpoints:
     @pytest.fixture
     def config_file_health(self, health_check_config):
         """Create config file for health check tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(health_check_config, f)
             return f.name
 
@@ -72,7 +71,6 @@ class TestHealthCheckEndpoints:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock healthy components
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -117,7 +115,6 @@ class TestHealthCheckEndpoints:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM failure
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -145,7 +142,7 @@ class TestHealthCheckEndpoints:
             # Verify health status reflects failures
             assert status["component_health"]["llm_evaluator"] is False
             assert status["component_health"]["message_dispatcher"] is False
-            
+
             # Critical components should still be healthy
             assert status["component_health"]["config_manager"] is True
             assert status["component_health"]["rss_monitor"] is True
@@ -161,7 +158,6 @@ class TestHealthCheckEndpoints:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock dispatcher that initially fails then recovers
             connection_attempts = 0
 
@@ -207,12 +203,9 @@ class TestHealthCheckEndpoints:
 
     def test_system_status_reporting(self, config_file_health):
         """Test comprehensive system status reporting."""
-        with patch(
-            "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
-        ), patch(
+        with patch("ozb_deal_filter.components.llm_evaluator.LLMEvaluator"), patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ):
-
             orchestrator = ApplicationOrchestrator(config_file_health)
 
             # Set up test state
@@ -295,20 +288,15 @@ class TestMetricsCollection:
     @pytest.fixture
     def config_file_metrics(self, metrics_config):
         """Create config file for metrics tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(metrics_config, f)
             return f.name
 
     def test_error_count_tracking(self, config_file_metrics):
         """Test error count tracking functionality."""
-        with patch(
-            "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
-        ), patch(
+        with patch("ozb_deal_filter.components.llm_evaluator.LLMEvaluator"), patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ):
-
             orchestrator = ApplicationOrchestrator(config_file_metrics)
 
             # Test error count increment
@@ -337,7 +325,6 @@ class TestMetricsCollection:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock RSS response
             rss_content = """<?xml version="1.0"?>
             <rss version="2.0">
@@ -419,10 +406,11 @@ class TestMetricsCollection:
 
             # Verify timing ranges
             assert all(0.04 < t < 0.06 for t in evaluation_times)  # ~50ms
-            assert all(0.01 < t < 0.03 for t in delivery_times)    # ~20ms
+            assert all(0.01 < t < 0.03 for t in delivery_times)  # ~20ms
 
             # Calculate performance statistics
             import statistics
+
             avg_eval_time = statistics.mean(evaluation_times)
             avg_delivery_time = statistics.mean(delivery_times)
 
@@ -434,12 +422,9 @@ class TestMetricsCollection:
     @pytest.mark.asyncio
     async def test_uptime_tracking(self, config_file_metrics):
         """Test system uptime tracking."""
-        with patch(
-            "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
-        ), patch(
+        with patch("ozb_deal_filter.components.llm_evaluator.LLMEvaluator"), patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ):
-
             orchestrator = ApplicationOrchestrator(config_file_metrics)
 
             # Set startup time
@@ -454,7 +439,9 @@ class TestMetricsCollection:
 
             # Parse uptime string and verify it's approximately 30 minutes
             uptime_str = status["uptime"]
-            assert "0:30:" in uptime_str or "0:29:" in uptime_str  # Allow for small timing differences
+            assert (
+                "0:30:" in uptime_str or "0:29:" in uptime_str
+            )  # Allow for small timing differences
 
 
 @pytest.mark.integration
@@ -493,9 +480,7 @@ class TestAlertDeliveryValidation:
     @pytest.fixture
     def config_file_delivery(self, delivery_config):
         """Create config file for delivery tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(delivery_config, f)
             return f.name
 
@@ -507,7 +492,6 @@ class TestAlertDeliveryValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM evaluator
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -580,7 +564,6 @@ class TestAlertDeliveryValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM evaluator
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -642,7 +625,6 @@ class TestAlertDeliveryValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM evaluator
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -664,7 +646,7 @@ class TestAlertDeliveryValidation:
                 start_time = time.time()
                 await asyncio.sleep(0.1)  # 100ms delay
                 end_time = time.time()
-                
+
                 result = DeliveryResult(
                     success=True,
                     delivery_time=datetime.now(timezone.utc),
@@ -741,9 +723,7 @@ class TestSystemStartupValidation:
     @pytest.fixture
     def config_file_startup(self, startup_config):
         """Create config file for startup tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(startup_config, f)
             return f.name
 
@@ -755,7 +735,6 @@ class TestSystemStartupValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock successful components
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -787,9 +766,7 @@ class TestSystemStartupValidation:
             # Verify all components are healthy
             status = orchestrator.get_system_status()
             assert status["config_loaded"] is True
-            assert all(
-                health for health in status["component_health"].values()
-            )
+            assert all(health for health in status["component_health"].values())
 
             await orchestrator.shutdown()
 
@@ -801,7 +778,6 @@ class TestSystemStartupValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM failure
             mock_llm_class.side_effect = Exception("LLM initialization failed")
 
@@ -832,7 +808,6 @@ class TestSystemStartupValidation:
         with patch(
             "ozb_deal_filter.services.config_manager.ConfigurationManager"
         ) as mock_config_mgr:
-
             # Mock critical component failure (config manager)
             mock_config_mgr.side_effect = Exception("Configuration loading failed")
 
@@ -854,7 +829,6 @@ class TestSystemStartupValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock components
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -882,7 +856,7 @@ class TestSystemStartupValidation:
             # Check required status fields
             required_fields = [
                 "running",
-                "startup_time", 
+                "startup_time",
                 "uptime",
                 "component_health",
                 "error_counts",
@@ -895,7 +869,7 @@ class TestSystemStartupValidation:
             # Check component health structure
             expected_components = [
                 "config_manager",
-                "rss_monitor", 
+                "rss_monitor",
                 "deal_parser",
                 "llm_evaluator",
                 "evaluation_service",
@@ -904,7 +878,9 @@ class TestSystemStartupValidation:
             ]
 
             for component in expected_components:
-                assert component in status["component_health"], f"Missing component health: {component}"
+                assert (
+                    component in status["component_health"]
+                ), f"Missing component health: {component}"
 
             # Verify configuration was loaded
             assert orchestrator._config is not None
@@ -920,7 +896,6 @@ class TestSystemStartupValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock fast components
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -934,12 +909,13 @@ class TestSystemStartupValidation:
 
             # Measure initialization time
             start_time = time.time()
-            
+
             # Run initialization synchronously for timing
             import asyncio
+
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            
+
             try:
                 init_success = loop.run_until_complete(orchestrator.initialize())
                 init_time = time.time() - start_time
@@ -947,7 +923,7 @@ class TestSystemStartupValidation:
                 # Verify timing requirements
                 assert init_success is True
                 assert init_time < 10.0  # Should initialize within 10 seconds
-                
+
                 print(f"System initialization time: {init_time:.2f}s")
 
                 # Cleanup

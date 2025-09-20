@@ -5,12 +5,12 @@ This module provides functionality to format deals into rich alert messages
 with platform-specific formatting and urgency level determination.
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from ..interfaces import IAlertFormatter
+from ..models.alert import FormattedAlert
 from ..models.deal import Deal
 from ..models.filter import FilterResult, UrgencyLevel
-from ..models.alert import FormattedAlert
 
 
 class UrgencyCalculator:

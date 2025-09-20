@@ -4,7 +4,7 @@ Deal data models for the OzBargain Deal Filter system.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 from urllib.parse import urlparse
 
 

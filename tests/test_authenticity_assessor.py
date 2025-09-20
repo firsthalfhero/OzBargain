@@ -3,9 +3,8 @@ Unit tests for the AuthenticityAssessor component.
 """
 
 from datetime import datetime
-from ozb_deal_filter.components.authenticity_assessor import (
-    AuthenticityAssessor,
-)
+
+from ozb_deal_filter.components.authenticity_assessor import AuthenticityAssessor
 from ozb_deal_filter.models.deal import Deal
 
 

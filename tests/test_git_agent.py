@@ -5,11 +5,12 @@ This module tests the git automation functionality including
 commit message generation, file staging, and commit operations.
 """
 
-import pytest
-from unittest.mock import Mock, patch
+import subprocess
 from datetime import datetime
 from pathlib import Path
-import subprocess
+from unittest.mock import Mock, patch
+
+import pytest
 
 from ozb_deal_filter.components.git_agent import GitAgent
 from ozb_deal_filter.models.git import CommitResult, GitStatus

@@ -10,18 +10,17 @@ import json
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, Optional, Union
 
-import requests
-import openai
 import anthropic
+import openai
+import requests
 
+from ..models.config import LLMProviderConfig
 from ..models.deal import Deal
 from ..models.evaluation import EvaluationResult
-from ..models.config import LLMProviderConfig
-
 
 logger = logging.getLogger(__name__)
 

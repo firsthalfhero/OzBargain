@@ -2,22 +2,23 @@
 Unit tests for LLM evaluation components.
 """
 
-import pytest
-import json
 import asyncio
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+import json
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from ozb_deal_filter.components.llm_evaluator import (
-    LLMEvaluator,
-    LocalLLMClient,
     APILLMClient,
-    LLMResponse,
+    LLMEvaluator,
     LLMProviderType,
+    LLMResponse,
+    LocalLLMClient,
 )
+from ozb_deal_filter.models.config import LLMProviderConfig
 from ozb_deal_filter.models.deal import Deal
 from ozb_deal_filter.models.evaluation import EvaluationResult
-from ozb_deal_filter.models.config import LLMProviderConfig
 
 
 @pytest.fixture

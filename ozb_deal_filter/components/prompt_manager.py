@@ -5,11 +5,10 @@ This module provides functionality for loading, validating, and managing
 prompt templates used for deal evaluation.
 """
 
-import os
 import logging
-from typing import Dict
+import os
 from pathlib import Path
-
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 

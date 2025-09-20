@@ -8,46 +8,46 @@ managing their lifecycle, error handling, and graceful shutdown.
 import asyncio
 import signal
 import sys
-from typing import Optional, Dict, Any, List
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+from .components.alert_formatter import AlertFormatter
+from .components.deal_parser import DealParser
+from .components.llm_evaluator import LLMEvaluator
+from .components.message_dispatcher import MessageDispatcherFactory
+from .components.rss_monitor import RSSMonitor
 from .interfaces import (
-    IRSSMonitor,
-    IDealParser,
-    ILLMEvaluator,
-    IFilterEngine,
     IAlertFormatter,
-    IMessageDispatcher,
     IConfigurationManager,
+    IDealParser,
+    IFilterEngine,
+    ILLMEvaluator,
+    IMessageDispatcher,
+    IRSSMonitor,
 )
+from .models.alert import FormattedAlert
 from .models.config import Configuration
 from .models.deal import Deal, RawDeal
+from .models.delivery import DeliveryResult
 from .models.evaluation import EvaluationResult
 from .models.filter import FilterResult
-from .models.alert import FormattedAlert
-from .models.delivery import DeliveryResult
 
 # Import concrete implementations
 from .services.config_manager import ConfigurationManager
-from .components.rss_monitor import RSSMonitor
-from .components.deal_parser import DealParser
-from .components.llm_evaluator import LLMEvaluator
-from .components.alert_formatter import AlertFormatter
-from .components.message_dispatcher import MessageDispatcherFactory
 from .services.evaluation_service import EvaluationService
-
-# Import error handling and logging utilities
-from .utils.logging import get_logger, setup_logging
 from .utils.error_handling import (
-    get_error_tracker,
-    get_degradation_manager,
-    with_error_handling,
-    with_circuit_breaker,
     ErrorCategory,
     ErrorSeverity,
     RetryConfig,
+    get_degradation_manager,
+    get_error_tracker,
+    with_circuit_breaker,
+    with_error_handling,
 )
+
+# Import error handling and logging utilities
+from .utils.logging import get_logger, setup_logging
 
 
 class ApplicationOrchestrator:

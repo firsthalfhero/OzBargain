@@ -5,8 +5,8 @@ This module provides functionality to assess deal authenticity using
 OzBargain community data such as votes and comments.
 """
 
-from typing import Optional
 import logging
+from typing import Optional
 
 from ..models.deal import Deal
 

@@ -8,8 +8,8 @@ including staging files, generating commit messages, and committing changes.
 import re
 import subprocess
 from datetime import datetime
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
 
 from ..interfaces import IGitAgent
 from ..models.git import CommitResult, GitStatus

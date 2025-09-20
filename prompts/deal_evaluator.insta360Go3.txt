@@ -8,6 +8,7 @@ Price: {price}
 Original Price: {original_price}
 Discount: {discount_percentage}%
 Category: {category}
+Deal recency: {timestamp}
 
 User Criteria:
 - Interested in: {categories}

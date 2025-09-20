@@ -3,7 +3,7 @@ Configuration models for the system.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 

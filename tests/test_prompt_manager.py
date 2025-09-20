@@ -2,11 +2,12 @@
 Unit tests for prompt management components.
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
+
+import pytest
 
 from ozb_deal_filter.components.prompt_manager import PromptManager
 

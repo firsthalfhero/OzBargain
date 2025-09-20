@@ -2,14 +2,14 @@
 Main entry point for the OzBargain Deal Filter system.
 """
 
-import sys
 import asyncio
 import logging
+import sys
 from pathlib import Path
 from typing import Optional
 
 from .orchestrator import ApplicationOrchestrator
-from .utils.logging import setup_logging, get_logger
+from .utils.logging import get_logger, setup_logging
 
 
 async def async_main(config_path: Optional[str] = None):

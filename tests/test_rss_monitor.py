@@ -2,13 +2,14 @@
 Unit tests for RSS monitoring components.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 import asyncio
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 import requests
 
-from ozb_deal_filter.components.rss_monitor import FeedPoller, DealDetector, RSSMonitor
+from ozb_deal_filter.components.rss_monitor import DealDetector, FeedPoller, RSSMonitor
 from ozb_deal_filter.models.deal import RawDeal
 
 

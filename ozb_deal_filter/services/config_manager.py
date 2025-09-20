@@ -2,18 +2,19 @@
 Configuration management system for the OzBargain Deal Filter.
 """
 
-import os
-import yaml
 import json
-from typing import Dict, Any, Optional
+import os
+from typing import Any, Dict, Optional
 
+import yaml
+
+from ..interfaces import IConfigurationManager
 from ..models.config import (
     Configuration,
-    UserCriteria,
     LLMProviderConfig,
     MessagingPlatformConfig,
+    UserCriteria,
 )
-from ..interfaces import IConfigurationManager
 
 
 class ConfigurationManager(IConfigurationManager):

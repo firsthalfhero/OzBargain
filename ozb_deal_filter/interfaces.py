@@ -6,16 +6,19 @@ system boundaries and enable dependency injection throughout
 the application.
 """
 
-from abc import ABC, abstractmethod
-from typing import Protocol, List, Optional, Dict, Any
-from datetime import datetime
-from enum import Enum
+from typing import List, Protocol
 
+from .models.alert import FormattedAlert
 from .models.deal import Deal, RawDeal
+from .models.delivery import DeliveryResult
 from .models.evaluation import EvaluationResult
 from .models.filter import FilterResult
-from .models.alert import FormattedAlert
-from .models.delivery import DeliveryResult
+
+# Forward declarations for type hints
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models.config import Configuration, LLMProviderConfig
 
 
 class IRSSMonitor(Protocol):

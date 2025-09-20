@@ -4,10 +4,10 @@ import logging
 import re
 from typing import Optional
 
+from ..models.config import UserCriteria
 from ..models.deal import Deal
 from ..models.evaluation import EvaluationResult
 from ..models.filter import FilterResult, UrgencyLevel
-from ..models.config import UserCriteria
 from .authenticity_assessor import AuthenticityAssessor
 
 logger = logging.getLogger(__name__)

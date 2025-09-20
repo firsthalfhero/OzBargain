@@ -5,11 +5,12 @@ This module provides functionality to dispatch alert messages through
 various messaging platforms with retry logic and error handling.
 """
 
+import logging
 import time
 from abc import abstractmethod
 from datetime import datetime
-from typing import Dict, Any
-import logging
+from typing import Any, Dict
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -17,7 +18,6 @@ from urllib3.util.retry import Retry
 from ..interfaces import IMessageDispatcher
 from ..models.alert import FormattedAlert
 from ..models.delivery import DeliveryResult
-
 
 logger = logging.getLogger(__name__)
 

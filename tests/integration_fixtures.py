@@ -5,19 +5,20 @@ This module provides common fixtures, mock data, and utilities
 specifically for integration testing scenarios.
 """
 
-import pytest
-import tempfile
-import yaml
 import asyncio
-from unittest.mock import Mock, AsyncMock
+import tempfile
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+from unittest.mock import AsyncMock, Mock
 
+import pytest
+import yaml
+
+from ozb_deal_filter.models.alert import FormattedAlert
 from ozb_deal_filter.models.deal import Deal, RawDeal
+from ozb_deal_filter.models.delivery import DeliveryResult
 from ozb_deal_filter.models.evaluation import EvaluationResult
 from ozb_deal_filter.models.filter import FilterResult, UrgencyLevel
-from ozb_deal_filter.models.alert import FormattedAlert
-from ozb_deal_filter.models.delivery import DeliveryResult
 
 
 class MockRSSServer:
@@ -51,6 +52,7 @@ class MockRSSServer:
 
         # Simulate failures
         import random
+
         if random.random() < self.failure_rate:
             raise Exception("Simulated network failure")
 
@@ -92,6 +94,7 @@ class MockLLMProvider:
 
         # Simulate failures
         import random
+
         if random.random() < self.failure_rate:
             raise Exception("Simulated LLM failure")
 
@@ -136,6 +139,7 @@ class MockMessagePlatform:
 
         # Simulate failures
         import random
+
         if random.random() < self.failure_rate:
             return DeliveryResult(
                 success=False,
@@ -160,7 +164,8 @@ class IntegrationTestData:
         """Create RSS feed XML from deal data."""
         items = []
         for deal in deals:
-            items.append(f"""
+            items.append(
+                f"""
                 <item>
                     <title>{deal.get('title', 'Test Deal')}</title>
                     <description>{deal.get('description', 'Test description')}</description>
@@ -168,7 +173,8 @@ class IntegrationTestData:
                     <pubDate>{deal.get('pub_date', 'Mon, 01 Jan 2024 12:00:00 GMT')}</pubDate>
                     <category>{deal.get('category', 'Electronics')}</category>
                 </item>
-            """)
+            """
+            )
 
         return f"""<?xml version="1.0" encoding="UTF-8"?>
         <rss version="2.0">
@@ -180,17 +186,21 @@ class IntegrationTestData:
         </rss>"""
 
     @staticmethod
-    def create_deal_batch(count: int, category: str = "Electronics") -> List[Dict[str, Any]]:
+    def create_deal_batch(
+        count: int, category: str = "Electronics"
+    ) -> List[Dict[str, Any]]:
         """Create a batch of test deals."""
         deals = []
         for i in range(count):
-            deals.append({
-                "title": f"Test Deal {i} - {category} Special",
-                "description": f"Great {category.lower()} deal number {i}",
-                "link": f"https://www.ozbargain.com.au/node/{123456 + i}",
-                "pub_date": f"Mon, 01 Jan 2024 {12 + (i % 12):02d}:00:00 GMT",
-                "category": category,
-            })
+            deals.append(
+                {
+                    "title": f"Test Deal {i} - {category} Special",
+                    "description": f"Great {category.lower()} deal number {i}",
+                    "link": f"https://www.ozbargain.com.au/node/{123456 + i}",
+                    "pub_date": f"Mon, 01 Jan 2024 {12 + (i % 12):02d}:00:00 GMT",
+                    "category": category,
+                }
+            )
         return deals
 
     @staticmethod
@@ -271,11 +281,13 @@ class PerformanceMonitor:
     def start_timer(self, metric_name: str) -> None:
         """Start timing a metric."""
         import time
+
         self.start_times[metric_name] = time.time()
 
     def end_timer(self, metric_name: str) -> float:
         """End timing and record metric."""
         import time
+
         if metric_name not in self.start_times:
             return 0.0
 
@@ -292,6 +304,7 @@ class PerformanceMonitor:
             return {}
 
         import statistics
+
         values = self.metrics[metric_name]
         return {
             "count": len(values),
@@ -344,9 +357,7 @@ def temp_config_file():
     config_files = []
 
     def _create_config(config_dict: Dict[str, Any]) -> str:
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config_dict, f)
             config_files.append(f.name)
             return f.name
@@ -355,6 +366,7 @@ def temp_config_file():
 
     # Cleanup
     import os
+
     for config_file in config_files:
         try:
             os.unlink(config_file)
@@ -391,27 +403,28 @@ async def wait_for_condition(
 ) -> bool:
     """Wait for a condition to become true."""
     import time
+
     start_time = time.time()
-    
+
     while time.time() - start_time < timeout:
         if condition_func():
             return True
         await asyncio.sleep(check_interval)
-    
+
     return False
 
 
 async def simulate_real_time_feeds(
-    mock_server: MockRSSServer, 
-    feed_updates: List[Dict[str, Any]], 
-    update_interval: float = 1.0
+    mock_server: MockRSSServer,
+    feed_updates: List[Dict[str, Any]],
+    update_interval: float = 1.0,
 ) -> None:
     """Simulate real-time feed updates."""
     for i, update in enumerate(feed_updates):
         # Update feed content
         rss_content = IntegrationTestData.create_rss_feed(update["deals"])
         mock_server.add_feed(update["url"], rss_content)
-        
+
         # Wait before next update (except for last one)
         if i < len(feed_updates) - 1:
             await asyncio.sleep(update_interval)

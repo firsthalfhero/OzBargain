@@ -2,20 +2,21 @@
 Tests for logging utilities.
 """
 
-import pytest
-import tempfile
 import json
 import logging
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
+import pytest
 
 from ozb_deal_filter.utils.logging import (
     ComponentLogger,
     LoggingManager,
     LogLevel,
-    setup_logging,
     get_logger,
     get_logging_stats,
+    setup_logging,
 )
 
 

@@ -3,10 +3,10 @@
 from datetime import datetime
 
 from ozb_deal_filter.components.filter_engine import FilterEngine, PriceFilter
+from ozb_deal_filter.models.config import UserCriteria
 from ozb_deal_filter.models.deal import Deal
 from ozb_deal_filter.models.evaluation import EvaluationResult
 from ozb_deal_filter.models.filter import UrgencyLevel
-from ozb_deal_filter.models.config import UserCriteria
 
 
 class TestPriceFilter:

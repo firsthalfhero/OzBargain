@@ -2,23 +2,24 @@
 Unit tests for the message dispatcher system.
 """
 
-import pytest
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 import requests
-from requests.exceptions import RequestException, HTTPError
+from requests.exceptions import HTTPError, RequestException
 
 from ozb_deal_filter.components.message_dispatcher import (
     BaseMessageDispatcher,
-    TelegramDispatcher,
     DiscordDispatcher,
-    SlackDispatcher,
-    WhatsAppDispatcher,
     MessageDispatcherFactory,
+    SlackDispatcher,
+    TelegramDispatcher,
+    WhatsAppDispatcher,
 )
 from ozb_deal_filter.models.alert import FormattedAlert
-from ozb_deal_filter.models.filter import UrgencyLevel
 from ozb_deal_filter.models.delivery import DeliveryResult
+from ozb_deal_filter.models.filter import UrgencyLevel
 
 
 class MockMessageDispatcher(BaseMessageDispatcher):

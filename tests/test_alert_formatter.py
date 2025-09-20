@@ -2,14 +2,15 @@
 Unit tests for the alert formatting system.
 """
 
-import pytest
 from datetime import datetime
 from unittest.mock import Mock
 
+import pytest
+
 from ozb_deal_filter.components.alert_formatter import AlertFormatter, UrgencyCalculator
+from ozb_deal_filter.models.alert import FormattedAlert
 from ozb_deal_filter.models.deal import Deal
 from ozb_deal_filter.models.filter import FilterResult, UrgencyLevel
-from ozb_deal_filter.models.alert import FormattedAlert
 
 
 class TestUrgencyCalculator:

@@ -48,3 +48,4 @@ htmlcov/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+test_telegram.py

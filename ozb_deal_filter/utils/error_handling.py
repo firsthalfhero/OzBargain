@@ -8,10 +8,10 @@ and graceful degradation strategies for system components.
 import asyncio
 import functools
 import traceback
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from .logging import get_logger
 

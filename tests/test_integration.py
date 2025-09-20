@@ -6,24 +6,25 @@ workflow from RSS feed monitoring to alert delivery, including performance
 benchmarking and system behavior validation.
 """
 
-import pytest
 import asyncio
-import tempfile
-import yaml
-import time
 import statistics
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-from ozb_deal_filter.orchestrator import ApplicationOrchestrator
+import pytest
+import yaml
+
+from ozb_deal_filter.models.alert import FormattedAlert
+from ozb_deal_filter.models.config import Configuration
 from ozb_deal_filter.models.deal import Deal, RawDeal
+from ozb_deal_filter.models.delivery import DeliveryResult
 from ozb_deal_filter.models.evaluation import EvaluationResult
 from ozb_deal_filter.models.filter import FilterResult, UrgencyLevel
-from ozb_deal_filter.models.alert import FormattedAlert
-from ozb_deal_filter.models.delivery import DeliveryResult
-from ozb_deal_filter.models.config import Configuration
+from ozb_deal_filter.orchestrator import ApplicationOrchestrator
 
 
 @pytest.mark.integration
@@ -65,9 +66,7 @@ class TestEndToEndWorkflow:
     @pytest.fixture
     def config_file(self, integration_config):
         """Create temporary config file for integration tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(integration_config, f)
             return f.name
 
@@ -111,7 +110,6 @@ class TestEndToEndWorkflow:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock RSS response
             mock_response = Mock()
             mock_response.text = sample_rss_data
@@ -144,14 +142,14 @@ class TestEndToEndWorkflow:
 
             # Create and initialize orchestrator
             orchestrator = ApplicationOrchestrator(config_file)
-            
+
             # Initialize system
             init_success = await orchestrator.initialize()
             assert init_success is True
 
             # Simulate RSS feed processing
-            from ozb_deal_filter.components.rss_monitor import RSSMonitor
             from ozb_deal_filter.components.deal_parser import DealParser
+            from ozb_deal_filter.components.rss_monitor import RSSMonitor
 
             rss_monitor = RSSMonitor(polling_interval=60)
             deal_parser = DealParser()
@@ -199,7 +197,6 @@ class TestEndToEndWorkflow:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock RSS response
             mock_response = Mock()
             mock_response.text = sample_rss_data
@@ -210,7 +207,9 @@ class TestEndToEndWorkflow:
             # Mock LLM evaluator to fail
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
-            mock_llm.evaluate_deal = AsyncMock(side_effect=Exception("LLM service unavailable"))
+            mock_llm.evaluate_deal = AsyncMock(
+                side_effect=Exception("LLM service unavailable")
+            )
 
             # Mock message dispatcher
             mock_dispatcher = Mock()
@@ -267,14 +266,15 @@ class TestEndToEndWorkflow:
             await orchestrator.shutdown()
 
     @pytest.mark.asyncio
-    async def test_workflow_with_message_delivery_failure(self, config_file, sample_rss_data):
+    async def test_workflow_with_message_delivery_failure(
+        self, config_file, sample_rss_data
+    ):
         """Test workflow when message delivery fails."""
         with patch("requests.get") as mock_get, patch(
             "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock RSS response
             mock_response = Mock()
             mock_response.text = sample_rss_data
@@ -362,12 +362,12 @@ class TestEndToEndWorkflow:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.raise_for_status = Mock()
-            
+
             if "computing" in url:
                 mock_response.text = feed_data_1
             else:
                 mock_response.text = feed_data_2
-            
+
             return mock_response
 
         with patch("requests.get", side_effect=mock_get_side_effect), patch(
@@ -375,7 +375,6 @@ class TestEndToEndWorkflow:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM evaluator
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -407,7 +406,7 @@ class TestEndToEndWorkflow:
             from ozb_deal_filter.components.rss_monitor import RSSMonitor
 
             rss_monitor = RSSMonitor(polling_interval=60)
-            
+
             # Add multiple feeds
             feeds = [
                 "https://www.ozbargain.com.au/deals/feed",
@@ -420,9 +419,7 @@ class TestEndToEndWorkflow:
             # Process feeds concurrently
             tasks = []
             for feed_url in feeds:
-                task = asyncio.create_task(
-                    rss_monitor._fetch_and_parse_feed(feed_url)
-                )
+                task = asyncio.create_task(rss_monitor._fetch_and_parse_feed(feed_url))
                 tasks.append(task)
 
             # Wait for all feeds to be processed
@@ -472,9 +469,7 @@ class TestPerformanceBenchmarks:
     @pytest.fixture
     def config_file_perf(self, performance_config):
         """Create config file for performance tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(performance_config, f)
             return f.name
 
@@ -482,7 +477,8 @@ class TestPerformanceBenchmarks:
         """Create RSS feed with many deals for performance testing."""
         items = []
         for i in range(num_deals):
-            items.append(f"""
+            items.append(
+                f"""
                 <item>
                     <title>Deal {i} - Laptop Special Offer</title>
                     <description>Great laptop deal number {i} with excellent features</description>
@@ -490,7 +486,8 @@ class TestPerformanceBenchmarks:
                     <pubDate>Mon, 01 Jan 2024 {12 + (i % 12):02d}:00:00 GMT</pubDate>
                     <category>Computing</category>
                 </item>
-            """)
+            """
+            )
 
         return f"""<?xml version="1.0" encoding="UTF-8"?>
         <rss version="2.0">
@@ -514,8 +511,8 @@ class TestPerformanceBenchmarks:
             mock_response.raise_for_status = Mock()
             mock_get.return_value = mock_response
 
-            from ozb_deal_filter.components.rss_monitor import RSSMonitor
             from ozb_deal_filter.components.deal_parser import DealParser
+            from ozb_deal_filter.components.rss_monitor import RSSMonitor
 
             rss_monitor = RSSMonitor(polling_interval=60)
             deal_parser = DealParser()
@@ -554,7 +551,6 @@ class TestPerformanceBenchmarks:
         with patch(
             "ozb_deal_filter.components.llm_evaluator.LLMEvaluator"
         ) as mock_llm_class:
-
             # Mock LLM with realistic response times
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -633,7 +629,6 @@ class TestPerformanceBenchmarks:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock RSS response
             single_deal_feed = """<?xml version="1.0"?>
             <rss version="2.0">
@@ -706,7 +701,7 @@ class TestPerformanceBenchmarks:
                 )
 
                 await orchestrator._process_single_deal(raw_deal)
-                
+
                 end_time = time.time()
                 latency = end_time - start_time
                 latencies.append(latency)
@@ -718,7 +713,7 @@ class TestPerformanceBenchmarks:
 
             # Verify performance requirements
             assert avg_latency < 0.5  # Average under 500ms
-            assert max_latency < 1.0   # Max under 1 second
+            assert max_latency < 1.0  # Max under 1 second
             assert len(delivery_times) == 5  # All alerts delivered
 
             print(f"Average latency: {avg_latency:.3f}s")
@@ -730,8 +725,9 @@ class TestPerformanceBenchmarks:
     @pytest.mark.asyncio
     async def test_memory_usage_stability(self, config_file_perf):
         """Test memory usage stability during extended operation."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB
@@ -741,7 +737,6 @@ class TestPerformanceBenchmarks:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Setup mocks
             large_feed = self.create_large_rss_feed(50)
 
@@ -780,7 +775,7 @@ class TestPerformanceBenchmarks:
 
             # Monitor memory usage over time
             memory_samples = []
-            
+
             # Process deals in batches to simulate extended operation
             for batch in range(5):  # 5 batches of processing
                 # Process batch of deals
@@ -797,7 +792,7 @@ class TestPerformanceBenchmarks:
                 # Sample memory usage
                 current_memory = process.memory_info().rss / 1024 / 1024  # MB
                 memory_samples.append(current_memory)
-                
+
                 # Small delay between batches
                 await asyncio.sleep(0.1)
 
@@ -806,7 +801,7 @@ class TestPerformanceBenchmarks:
             # Analyze memory usage
             memory_growth = final_memory - initial_memory
             max_memory = max(memory_samples)
-            
+
             # Verify memory stability (should not grow excessively)
             assert memory_growth < 50  # Less than 50MB growth
             assert max_memory < initial_memory + 100  # Less than 100MB peak
@@ -857,9 +852,7 @@ class TestRealRSSFeedIntegration:
     @pytest.fixture
     def config_file_real(self, real_feed_config):
         """Create config file for real feed tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(real_feed_config, f)
             return f.name
 
@@ -872,7 +865,6 @@ class TestRealRSSFeedIntegration:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM evaluator
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -901,8 +893,8 @@ class TestRealRSSFeedIntegration:
             await orchestrator.initialize()
 
             # Test RSS feed fetching and parsing
-            from ozb_deal_filter.components.rss_monitor import RSSMonitor
             from ozb_deal_filter.components.deal_parser import DealParser
+            from ozb_deal_filter.components.rss_monitor import RSSMonitor
 
             rss_monitor = RSSMonitor(polling_interval=300)
             deal_parser = DealParser()
@@ -913,7 +905,7 @@ class TestRealRSSFeedIntegration:
                     rss_monitor._fetch_and_parse_feed(
                         "https://www.ozbargain.com.au/deals/feed"
                     ),
-                    timeout=30.0
+                    timeout=30.0,
                 )
 
                 # Verify we got real deals
@@ -958,22 +950,22 @@ class TestRealRSSFeedIntegration:
         from ozb_deal_filter.components.rss_monitor import RSSMonitor
 
         rss_monitor = RSSMonitor(polling_interval=300)
-        
+
         # Record request times
         request_times = []
-        
+
         try:
             # Make multiple requests and measure timing
             for i in range(3):
                 start_time = time.time()
-                
+
                 # This should respect rate limiting internally
                 await rss_monitor._fetch_and_parse_feed(
                     "https://www.ozbargain.com.au/deals/feed"
                 )
-                
+
                 request_times.append(time.time() - start_time)
-                
+
                 # Wait between requests to be respectful
                 if i < 2:  # Don't wait after last request
                     await asyncio.sleep(2.0)
@@ -1030,9 +1022,7 @@ class TestSystemBehaviorValidation:
     @pytest.fixture
     def config_file_behavior(self, behavior_config):
         """Create config file for behavior tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(behavior_config, f)
             return f.name
 
@@ -1044,7 +1034,6 @@ class TestSystemBehaviorValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock RSS response
             rss_content = """<?xml version="1.0"?>
             <rss version="2.0">
@@ -1109,7 +1098,7 @@ class TestSystemBehaviorValidation:
                     category="Computing",
                 ),
                 RawDeal(
-                    title="Laptop Deal 2", 
+                    title="Laptop Deal 2",
                     description="Second laptop deal",
                     link="https://example.com/deal2",
                     pub_date="Mon, 01 Jan 2024 12:01:00 GMT",
@@ -1129,7 +1118,7 @@ class TestSystemBehaviorValidation:
 
             # Verify system handled failures gracefully
             assert llm_call_count == 3  # All three deals attempted LLM evaluation
-            
+
             # Verify error tracking
             assert orchestrator._error_counts.get("llm_evaluation", 0) == 2
 
@@ -1151,12 +1140,12 @@ class TestSystemBehaviorValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Create large RSS feed
             num_deals = 50
             items = []
             for i in range(num_deals):
-                items.append(f"""
+                items.append(
+                    f"""
                     <item>
                         <title>High Volume Deal {i} - Laptop Special</title>
                         <description>Deal number {i} with great features</description>
@@ -1164,7 +1153,8 @@ class TestSystemBehaviorValidation:
                         <pubDate>Mon, 01 Jan 2024 {12 + (i % 12):02d}:00:00 GMT</pubDate>
                         <category>Computing</category>
                     </item>
-                """)
+                """
+                )
 
             large_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
             <rss version="2.0">
@@ -1222,9 +1212,9 @@ class TestSystemBehaviorValidation:
 
             # Process high volume of deals
             start_time = time.time()
-            
-            from ozb_deal_filter.components.rss_monitor import RSSMonitor
+
             from ozb_deal_filter.components.deal_parser import DealParser
+            from ozb_deal_filter.components.rss_monitor import RSSMonitor
 
             rss_monitor = RSSMonitor(polling_interval=60)
             deal_parser = DealParser()
@@ -1267,7 +1257,8 @@ class TestSystemBehaviorValidation:
         for i in range(3):
             items = []
             for j in range(10):
-                items.append(f"""
+                items.append(
+                    f"""
                     <item>
                         <title>Feed {i} Deal {j} - Electronics</title>
                         <description>Deal from feed {i}, item {j}</description>
@@ -1275,9 +1266,12 @@ class TestSystemBehaviorValidation:
                         <pubDate>Mon, 01 Jan 2024 {12 + j}:00:00 GMT</pubDate>
                         <category>Electronics</category>
                     </item>
-                """)
+                """
+                )
 
-            feed_contents[f"feed_{i}"] = f"""<?xml version="1.0"?>
+            feed_contents[
+                f"feed_{i}"
+            ] = f"""<?xml version="1.0"?>
             <rss version="2.0">
                 <channel>
                     <title>Test Feed {i}</title>
@@ -1290,7 +1284,7 @@ class TestSystemBehaviorValidation:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.raise_for_status = Mock()
-            
+
             # Return different content based on URL
             if "computing" in url:
                 mock_response.text = feed_contents["feed_0"]
@@ -1298,7 +1292,7 @@ class TestSystemBehaviorValidation:
                 mock_response.text = feed_contents["feed_1"]
             else:
                 mock_response.text = feed_contents["feed_2"]
-            
+
             return mock_response
 
         with patch("requests.get", side_effect=mock_get_side_effect), patch(
@@ -1306,7 +1300,6 @@ class TestSystemBehaviorValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock LLM evaluator
             evaluation_count = 0
             mock_llm = Mock()
@@ -1350,7 +1343,7 @@ class TestSystemBehaviorValidation:
             from ozb_deal_filter.components.rss_monitor import RSSMonitor
 
             rss_monitor = RSSMonitor(polling_interval=60)
-            
+
             feeds = [
                 "https://www.ozbargain.com.au/deals/feed",
                 "https://www.ozbargain.com.au/cat/computing/feed",
@@ -1363,23 +1356,21 @@ class TestSystemBehaviorValidation:
 
             # Process feeds concurrently
             start_time = time.time()
-            
+
             tasks = []
             for feed_url in feeds:
-                task = asyncio.create_task(
-                    rss_monitor._fetch_and_parse_feed(feed_url)
-                )
+                task = asyncio.create_task(rss_monitor._fetch_and_parse_feed(feed_url))
                 tasks.append(task)
 
             # Wait for all feeds to complete
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             processing_time = time.time() - start_time
 
             # Verify concurrent processing worked
             assert len(results) == 3
             assert all(not isinstance(result, Exception) for result in results)
-            
+
             # Verify all feeds returned deals
             total_deals = sum(len(result) for result in results)
             assert total_deals == 30  # 10 deals per feed
@@ -1387,7 +1378,9 @@ class TestSystemBehaviorValidation:
             # Verify reasonable processing time for concurrent execution
             assert processing_time < 5.0  # Should be faster than sequential
 
-            print(f"Processed {len(feeds)} feeds concurrently in {processing_time:.2f}s")
+            print(
+                f"Processed {len(feeds)} feeds concurrently in {processing_time:.2f}s"
+            )
             print(f"Total deals processed: {total_deals}")
 
             await orchestrator.shutdown()
@@ -1428,9 +1421,10 @@ class TestSystemBehaviorValidation:
             for iteration in range(10):
                 # Process deals
                 from ozb_deal_filter.components.rss_monitor import RSSMonitor
+
                 rss_monitor = RSSMonitor(polling_interval=60)
                 rss_monitor.add_feed("https://www.ozbargain.com.au/deals/feed")
-                
+
                 raw_deals = await rss_monitor._fetch_and_parse_feed(
                     "https://www.ozbargain.com.au/deals/feed"
                 )
@@ -1499,9 +1493,7 @@ class TestSystemBehaviorValidation:
     @pytest.fixture
     def config_file_behavior(self, behavior_config):
         """Create config file for behavior tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(behavior_config, f)
             return f.name
 
@@ -1513,9 +1505,9 @@ class TestSystemBehaviorValidation:
         def mock_get_with_failures(url, **kwargs):
             nonlocal call_count
             call_count += 1
-            
+
             mock_response = Mock()
-            
+
             # Fail first 3 attempts, succeed on 4th
             if call_count <= 3:
                 mock_response.raise_for_status.side_effect = Exception("Network error")
@@ -1542,7 +1534,6 @@ class TestSystemBehaviorValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Setup mocks
             mock_llm = Mock()
             mock_llm_class.return_value = mock_llm
@@ -1571,6 +1562,7 @@ class TestSystemBehaviorValidation:
 
             # Test RSS monitor with network failures
             from ozb_deal_filter.components.rss_monitor import RSSMonitor
+
             rss_monitor = RSSMonitor(polling_interval=60)
             rss_monitor.add_feed("https://www.ozbargain.com.au/deals/feed")
 
@@ -1617,6 +1609,7 @@ class TestSystemBehaviorValidation:
                 mock_get.return_value = mock_response
 
                 from ozb_deal_filter.components.rss_monitor import RSSMonitor
+
                 rss_monitor = RSSMonitor(polling_interval=60)
                 rss_monitor.add_feed("https://www.ozbargain.com.au/deals/feed")
 
@@ -1627,7 +1620,9 @@ class TestSystemBehaviorValidation:
                     )
                     # Should return empty list for invalid data
                     assert isinstance(raw_deals, list)
-                    print(f"Scenario {i + 1}: Handled gracefully, got {len(raw_deals)} deals")
+                    print(
+                        f"Scenario {i + 1}: Handled gracefully, got {len(raw_deals)} deals"
+                    )
                 except Exception as e:
                     # Should not crash the system
                     print(f"Scenario {i + 1}: Exception handled: {type(e).__name__}")
@@ -1640,7 +1635,8 @@ class TestSystemBehaviorValidation:
         items = []
         for i in range(200):  # 200 deals
             category = "Electronics" if i % 2 == 0 else "Computing"
-            items.append(f"""
+            items.append(
+                f"""
                 <item>
                     <title>Deal {i} - Phone Special {i % 10}% off</title>
                     <description>Great phone deal number {i}</description>
@@ -1648,7 +1644,8 @@ class TestSystemBehaviorValidation:
                     <pubDate>Mon, 01 Jan 2024 {12 + (i % 12):02d}:00:00 GMT</pubDate>
                     <category>{category}</category>
                 </item>
-            """)
+            """
+            )
 
         high_volume_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
         <rss version="2.0">
@@ -1664,7 +1661,6 @@ class TestSystemBehaviorValidation:
         ) as mock_llm_class, patch(
             "ozb_deal_filter.components.message_dispatcher.MessageDispatcherFactory"
         ) as mock_dispatcher_factory:
-
             # Mock RSS response
             mock_response = Mock()
             mock_response.text = high_volume_feed
@@ -1705,11 +1701,12 @@ class TestSystemBehaviorValidation:
 
             # Process high volume feed
             start_time = time.time()
-            
+
             from ozb_deal_filter.components.rss_monitor import RSSMonitor
+
             rss_monitor = RSSMonitor(polling_interval=60)
             rss_monitor.add_feed("https://www.ozbargain.com.au/deals/feed")
-            
+
             raw_deals = await rss_monitor._fetch_and_parse_feed(
                 "https://www.ozbargain.com.au/deals/feed"
             )
@@ -1724,9 +1721,9 @@ class TestSystemBehaviorValidation:
 
             # Verify system handled high volume
             assert len(raw_deals) == 200  # All deals parsed
-            assert processed_count == 50   # Processed subset
-            assert processing_time < 30     # Completed in reasonable time
-            assert len(sent_alerts) > 0     # Some alerts sent
+            assert processed_count == 50  # Processed subset
+            assert processing_time < 30  # Completed in reasonable time
+            assert len(sent_alerts) > 0  # Some alerts sent
 
             print(f"Processed {processed_count} deals in {processing_time:.2f}s")
             print(f"Sent {len(sent_alerts)} alerts")
@@ -1773,7 +1770,7 @@ class TestSystemBehaviorValidation:
 
             # Should handle invalid configuration gracefully
             orchestrator = ApplicationOrchestrator(config_file)
-            
+
             try:
                 init_success = await orchestrator.initialize()
                 # Should fail initialization with invalid config
@@ -1824,9 +1821,7 @@ class TestErrorRecoveryScenarios:
     @pytest.fixture
     def config_file_recovery(self, recovery_config):
         """Create config file for recovery tests."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(recovery_config, f)
             return f.name
 
@@ -1834,4 +1829,3 @@ class TestErrorRecoveryScenarios:
     async def test_network_failure_recovery(self, config_file_recovery):
         """Test recovery from network failures."""
         request_count = 0
-        

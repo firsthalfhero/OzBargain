@@ -2,23 +2,24 @@
 Tests for the application orchestrator.
 """
 
-import pytest
 import asyncio
 import tempfile
-import yaml
-from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
-from ozb_deal_filter.orchestrator import ApplicationOrchestrator
+import pytest
+import yaml
+
 from ozb_deal_filter.models.config import (
     Configuration,
-    UserCriteria,
     LLMProviderConfig,
     MessagingPlatformConfig,
+    UserCriteria,
 )
 from ozb_deal_filter.models.deal import Deal, RawDeal
 from ozb_deal_filter.models.evaluation import EvaluationResult
 from ozb_deal_filter.models.filter import FilterResult, UrgencyLevel
+from ozb_deal_filter.orchestrator import ApplicationOrchestrator
 
 
 @pytest.fixture

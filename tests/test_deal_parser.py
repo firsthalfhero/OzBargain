@@ -2,16 +2,17 @@
 Unit tests for deal parsing components.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
+import pytest
+
 from ozb_deal_filter.components.deal_parser import (
-    PriceExtractor,
-    DealValidator,
     DealParser,
+    DealValidator,
+    PriceExtractor,
 )
-from ozb_deal_filter.models.deal import RawDeal, Deal
+from ozb_deal_filter.models.deal import Deal, RawDeal
 
 
 class TestPriceExtractor:

@@ -5,19 +5,20 @@ This module provides common fixtures and configuration for all tests
 in the OzBargain Deal Filter test suite.
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
+import os
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-import tempfile
-import os
+from unittest.mock import MagicMock, Mock
 
+import pytest
+
+from ozb_deal_filter.models.alert import FormattedAlert
+from ozb_deal_filter.models.config import Configuration, UserCriteria
 from ozb_deal_filter.models.deal import Deal, RawDeal
+from ozb_deal_filter.models.delivery import DeliveryResult
 from ozb_deal_filter.models.evaluation import EvaluationResult
 from ozb_deal_filter.models.filter import FilterResult, UrgencyLevel
-from ozb_deal_filter.models.alert import FormattedAlert
-from ozb_deal_filter.models.delivery import DeliveryResult
-from ozb_deal_filter.models.config import Configuration, UserCriteria
 from ozb_deal_filter.models.git import CommitResult, GitStatus
 
 

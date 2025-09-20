@@ -2,24 +2,25 @@
 Tests for error handling utilities.
 """
 
-import pytest
 import asyncio
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
+import pytest
+
 from ozb_deal_filter.utils.error_handling import (
-    ErrorTracker,
-    ErrorCategory,
-    ErrorSeverity,
-    ErrorInfo,
-    RetryConfig,
     CircuitBreaker,
     CircuitBreakerState,
+    ErrorCategory,
+    ErrorInfo,
+    ErrorSeverity,
+    ErrorTracker,
     GracefulDegradation,
-    with_error_handling,
-    with_circuit_breaker,
-    get_error_tracker,
+    RetryConfig,
     get_degradation_manager,
+    get_error_tracker,
+    with_circuit_breaker,
+    with_error_handling,
 )
 
 

@@ -5,19 +5,21 @@ This module provides utilities for monitoring system health, collecting
 performance metrics, and validating system behavior.
 """
 
-import time
-import psutil
 import asyncio
-from typing import Dict, Any, List, Optional, Callable
-from datetime import datetime, timezone, timedelta
+import time
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
+
+import psutil
 
 from .logging import get_logger
 
 
 class HealthStatus(Enum):
     """Health status enumeration."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -27,6 +29,7 @@ class HealthStatus(Enum):
 @dataclass
 class ComponentHealth:
     """Component health information."""
+
     name: str
     status: HealthStatus
     last_check: datetime
@@ -38,6 +41,7 @@ class ComponentHealth:
 @dataclass
 class PerformanceMetric:
     """Performance metric data."""
+
     name: str
     value: float
     unit: str
@@ -48,6 +52,7 @@ class PerformanceMetric:
 @dataclass
 class SystemMetrics:
     """System-wide metrics."""
+
     cpu_percent: float
     memory_percent: float
     memory_used_mb: float
@@ -65,9 +70,7 @@ class HealthChecker:
         self.health_checks: Dict[str, Callable] = {}
 
     def register_component(
-        self, 
-        name: str, 
-        health_check_func: Callable[[], bool]
+        self, name: str, health_check_func: Callable[[], bool]
     ) -> None:
         """Register a component for health checking."""
         self.health_checks[name] = health_check_func
@@ -108,8 +111,7 @@ class HealthChecker:
             component.failure_count += 1
             component.error_message = str(e)
             self.logger.error(
-                f"Health check failed for {component_name}: {e}",
-                exc_info=True
+                f"Health check failed for {component_name}: {e}", exc_info=True
             )
 
         return component.status
@@ -117,7 +119,7 @@ class HealthChecker:
     async def check_all_components(self) -> Dict[str, HealthStatus]:
         """Check health of all registered components."""
         results = {}
-        
+
         for component_name in self.health_checks.keys():
             results[component_name] = await self.check_component_health(component_name)
 
@@ -137,7 +139,7 @@ class HealthChecker:
             return HealthStatus.UNKNOWN
 
         statuses = [comp.status for comp in self.component_health.values()]
-        
+
         if all(status == HealthStatus.HEALTHY for status in statuses):
             return HealthStatus.HEALTHY
         elif any(status == HealthStatus.UNHEALTHY for status in statuses):
@@ -156,11 +158,11 @@ class MetricsCollector:
         self.start_time = time.time()
 
     def record_metric(
-        self, 
-        name: str, 
-        value: float, 
-        unit: str = "", 
-        tags: Optional[Dict[str, str]] = None
+        self,
+        name: str,
+        value: float,
+        unit: str = "",
+        tags: Optional[Dict[str, str]] = None,
     ) -> None:
         """Record a performance metric."""
         metric = PerformanceMetric(
@@ -175,7 +177,7 @@ class MetricsCollector:
 
         # Limit metrics storage
         if len(self.metrics) > self.max_metrics:
-            self.metrics = self.metrics[-self.max_metrics:]
+            self.metrics = self.metrics[-self.max_metrics :]
 
         self.logger.debug(f"Recorded metric: {name}={value}{unit}")
 
@@ -188,37 +190,30 @@ class MetricsCollector:
         self.record_metric(name, count, "count")
 
     def get_metrics(
-        self, 
-        name_filter: Optional[str] = None,
-        since: Optional[datetime] = None
+        self, name_filter: Optional[str] = None, since: Optional[datetime] = None
     ) -> List[PerformanceMetric]:
         """Get metrics with optional filtering."""
         filtered_metrics = self.metrics
 
         if name_filter:
-            filtered_metrics = [
-                m for m in filtered_metrics 
-                if name_filter in m.name
-            ]
+            filtered_metrics = [m for m in filtered_metrics if name_filter in m.name]
 
         if since:
-            filtered_metrics = [
-                m for m in filtered_metrics 
-                if m.timestamp >= since
-            ]
+            filtered_metrics = [m for m in filtered_metrics if m.timestamp >= since]
 
         return filtered_metrics
 
     def get_metric_stats(self, name: str) -> Dict[str, float]:
         """Get statistics for a specific metric."""
         metrics = [m for m in self.metrics if m.name == name]
-        
+
         if not metrics:
             return {}
 
         values = [m.value for m in metrics]
-        
+
         import statistics
+
         return {
             "count": len(values),
             "mean": statistics.mean(values),
@@ -231,12 +226,12 @@ class MetricsCollector:
     def get_system_metrics(self) -> SystemMetrics:
         """Get current system metrics."""
         process = psutil.Process()
-        
+
         return SystemMetrics(
             cpu_percent=psutil.cpu_percent(interval=0.1),
             memory_percent=psutil.virtual_memory().percent,
             memory_used_mb=process.memory_info().rss / 1024 / 1024,
-            disk_usage_percent=psutil.disk_usage('/').percent,
+            disk_usage_percent=psutil.disk_usage("/").percent,
             uptime_seconds=time.time() - self.start_time,
             timestamp=datetime.now(timezone.utc),
         )
@@ -258,7 +253,7 @@ class AlertDeliveryValidator:
         success: bool,
         delivery_time: datetime,
         latency_ms: float,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """Record an alert delivery attempt."""
         attempt = {
@@ -286,12 +281,9 @@ class AlertDeliveryValidator:
     def get_delivery_stats(self, since: Optional[datetime] = None) -> Dict[str, Any]:
         """Get delivery statistics."""
         attempts = self.delivery_attempts
-        
+
         if since:
-            attempts = [
-                a for a in attempts 
-                if a["timestamp"] >= since
-            ]
+            attempts = [a for a in attempts if a["timestamp"] >= since]
 
         if not attempts:
             return {
@@ -315,13 +307,15 @@ class AlertDeliveryValidator:
             "average_latency_ms": avg_latency,
             "min_latency_ms": min(latencies) if latencies else 0.0,
             "max_latency_ms": max(latencies) if latencies else 0.0,
-            "failure_reasons": [a["error_message"] for a in failed_attempts if a["error_message"]],
+            "failure_reasons": [
+                a["error_message"] for a in failed_attempts if a["error_message"]
+            ],
         }
 
     def validate_delivery_requirements(self) -> Dict[str, bool]:
         """Validate delivery against requirements."""
         stats = self.get_delivery_stats()
-        
+
         return {
             "success_rate_ok": stats["success_rate"] >= 95.0,  # 95% success rate
             "latency_ok": stats["average_latency_ms"] <= 5000.0,  # 5 second average
@@ -341,7 +335,7 @@ class SystemStartupValidator:
         check_name: str,
         success: bool,
         duration_ms: float,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """Record a startup validation check."""
         check = {
@@ -379,13 +373,15 @@ class SystemStartupValidator:
             "failed_checks": [c["check_name"] for c in failed_checks],
             "total_startup_time_ms": total_time,
             "startup_time_ok": total_time <= 60000.0,  # 60 seconds max
-            "error_messages": [c["error_message"] for c in failed_checks if c["error_message"]],
+            "error_messages": [
+                c["error_message"] for c in failed_checks if c["error_message"]
+            ],
         }
 
     def get_startup_summary(self) -> str:
         """Get a human-readable startup summary."""
         validation = self.validate_startup_requirements()
-        
+
         if validation["all_checks_passed"]:
             return (
                 f"✅ Startup successful: {validation['passed_checks']} checks passed "
@@ -401,6 +397,7 @@ class SystemStartupValidator:
 # Timing decorator for automatic metrics collection
 def timed_operation(metric_name: str, collector: Optional[MetricsCollector] = None):
     """Decorator to automatically time operations and record metrics."""
+
     def decorator(func):
         async def async_wrapper(*args, **kwargs):
             start_time = time.time()
@@ -411,7 +408,7 @@ def timed_operation(metric_name: str, collector: Optional[MetricsCollector] = No
                 duration = time.time() - start_time
                 if collector:
                     collector.record_timing(metric_name, duration)
-        
+
         def sync_wrapper(*args, **kwargs):
             start_time = time.time()
             try:
@@ -421,8 +418,9 @@ def timed_operation(metric_name: str, collector: Optional[MetricsCollector] = No
                 duration = time.time() - start_time
                 if collector:
                     collector.record_timing(metric_name, duration)
-        
+
         return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+
     return decorator
 
 

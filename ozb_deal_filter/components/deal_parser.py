@@ -5,18 +5,17 @@ This module provides functionality to convert RSS entries to Deal objects,
 extract price and discount information, and validate parsed deal data.
 """
 
-import re
-import logging
-from typing import Optional, List, Tuple
-from datetime import datetime, timedelta
-from urllib.parse import urlparse
 import hashlib
+import logging
+import re
+from datetime import datetime, timedelta
+from typing import List, Optional, Tuple
+from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 
-from ..models.deal import RawDeal, Deal
-
+from ..models.deal import Deal, RawDeal
 
 logger = logging.getLogger(__name__)
 
