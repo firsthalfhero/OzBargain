@@ -28,15 +28,14 @@ jobs:
         path: |
           ~/.cache/pip
           ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest-cov isort coverage bandit safety
+        pip install -r requirements-dev.txt
 
     - name: Create reports directory (Unix)
       if: runner.os != 'Windows'
@@ -94,7 +93,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install bandit safety
+        pip install -r requirements-dev.txt
 
     - name: Run security checks
       continue-on-error: true
@@ -144,8 +143,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest-benchmark
+        pip install -r requirements-dev.txt
 
     - name: Run performance benchmarks
       continue-on-error: true
@@ -173,8 +171,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pre-commit
+        pip install -r requirements-dev.txt
 
     - name: Run pre-commit hooks
       continue-on-error: true
