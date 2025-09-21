@@ -219,6 +219,7 @@ class ApplicationOrchestrator:
 
             # Initialize filter engine
             from .components.filter_engine import FilterEngine
+
             self._filter_engine = FilterEngine(self._config.user_criteria)
             self._component_health["filter_engine"] = True
             self.logger.info("Filter engine initialized")
@@ -572,9 +573,12 @@ class ApplicationOrchestrator:
         else:
             # Fallback to basic filtering if FilterEngine is not available
             from .models.filter import FilterResult, UrgencyLevel
-            
+
             passes_price = True
-            if self._config.user_criteria.max_price is not None and deal.price is not None:
+            if (
+                self._config.user_criteria.max_price is not None
+                and deal.price is not None
+            ):
                 passes_price = deal.price <= self._config.user_criteria.max_price
 
             passes_discount = True

@@ -6,16 +6,14 @@ system boundaries and enable dependency injection throughout
 the application.
 """
 
-from typing import List, Protocol
+# Forward declarations for type hints
+from typing import TYPE_CHECKING, List, Protocol
 
 from .models.alert import FormattedAlert
 from .models.deal import Deal, RawDeal
 from .models.delivery import DeliveryResult
 from .models.evaluation import EvaluationResult
 from .models.filter import FilterResult
-
-# Forward declarations for type hints
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .models.config import Configuration, LLMProviderConfig

@@ -52,8 +52,14 @@ class LLMProviderConfig:
             # Validate API key is present and not a placeholder
             api_key = self.api.get("api_key", "")
             if not api_key or api_key.startswith("__MISSING_ENV_VAR_"):
-                missing_var = api_key.replace("__MISSING_ENV_VAR_", "").replace("__", "") if api_key.startswith("__MISSING_ENV_VAR_") else "API_KEY"
-                raise ValueError(f"API key is required when using API-based LLM provider. Please set the {missing_var} environment variable.")
+                missing_var = (
+                    api_key.replace("__MISSING_ENV_VAR_", "").replace("__", "")
+                    if api_key.startswith("__MISSING_ENV_VAR_")
+                    else "API_KEY"
+                )
+                raise ValueError(
+                    f"API key is required when using API-based LLM provider. Please set the {missing_var} environment variable."
+                )
 
         return True
 
@@ -230,10 +236,7 @@ class Configuration:
             raise ValueError("Max concurrent feeds cannot exceed 50")
 
         # Validate max deal age hours
-        if (
-            not isinstance(self.max_deal_age_hours, int)
-            or self.max_deal_age_hours <= 0
-        ):
+        if not isinstance(self.max_deal_age_hours, int) or self.max_deal_age_hours <= 0:
             raise ValueError("Max deal age hours must be a positive integer")
 
         if self.max_deal_age_hours > 168:  # 1 week

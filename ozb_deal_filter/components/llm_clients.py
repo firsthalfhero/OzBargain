@@ -133,8 +133,11 @@ class LocalLLMClient(BaseLLMClient):
         self.docker_client = None
         self.container = None
         import os
+
         # Use config first, then environment variable, then localhost fallback
-        self.base_url = config.get("base_url") or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        self.base_url = config.get("base_url") or os.getenv(
+            "OLLAMA_BASE_URL", "http://localhost:11434"
+        )
         self.model = config["model"]
         self.docker_image = config["docker_image"]
 

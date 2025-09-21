@@ -15,9 +15,9 @@ from typing import Awaitable, Callable, Dict, List, Optional, Set, Union
 
 import feedparser
 import requests
+from dateutil import parser as date_parser
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from dateutil import parser as date_parser
 
 from ..models.deal import RawDeal
 
@@ -169,9 +169,11 @@ class FeedPoller:
 class DealDetector:
     """Detects new deals from RSS feed data."""
 
-    def __init__(self, state_file: str = "logs/seen_deals.json", max_age_hours: int = 24):
+    def __init__(
+        self, state_file: str = "logs/seen_deals.json", max_age_hours: int = 24
+    ):
         """Initialize deal detector with persistent state.
-        
+
         Args:
             state_file: Path to file for storing seen deal IDs
             max_age_hours: Maximum age in hours for deals to be considered new
@@ -180,11 +182,13 @@ class DealDetector:
         self.max_age_hours = max_age_hours
         self.seen_deal_ids: Set[str] = set()
         self.last_cleanup = datetime.now()
-        
+
         # Load existing state
         self._load_state()
-        
-        logger.info(f"DealDetector initialized with {len(self.seen_deal_ids)} known deals")
+
+        logger.info(
+            f"DealDetector initialized with {len(self.seen_deal_ids)} known deals"
+        )
 
     def detect_new_deals(self, feed_data: str) -> List[RawDeal]:
         """
@@ -215,7 +219,7 @@ class DealDetector:
 
                     if not deal_id:
                         continue
-                        
+
                     # Check if we've already seen this deal
                     if deal_id in self.seen_deal_ids:
                         continue
@@ -228,13 +232,17 @@ class DealDetector:
                             # Make timezone-naive for comparison
                             if pub_date.tzinfo is not None:
                                 pub_date = pub_date.replace(tzinfo=None)
-                            
+
                             # Skip deals older than max_age_hours
                             if pub_date < cutoff_time:
-                                logger.debug(f"Skipping old deal: {entry.get('title', 'Unknown')} ({pub_date})")
+                                logger.debug(
+                                    f"Skipping old deal: {entry.get('title', 'Unknown')} ({pub_date})"
+                                )
                                 continue
                         except Exception as e:
-                            logger.warning(f"Could not parse date '{pub_date_str}': {e}")
+                            logger.warning(
+                                f"Could not parse date '{pub_date_str}': {e}"
+                            )
                             # If we can't parse the date, let it through (better safe than sorry)
 
                     # Extract deal information
@@ -258,7 +266,7 @@ class DealDetector:
 
             # Save state after processing
             self._save_state()
-            
+
             # Periodic cleanup of old entries
             if datetime.now() - self.last_cleanup > timedelta(hours=1):
                 self._cleanup_old_entries()
@@ -303,10 +311,12 @@ class DealDetector:
         """Load seen deal IDs from persistent storage."""
         try:
             if self.state_file.exists():
-                with open(self.state_file, 'r') as f:
+                with open(self.state_file, "r") as f:
                     data = json.load(f)
-                    self.seen_deal_ids = set(data.get('seen_deals', []))
-                    logger.debug(f"Loaded {len(self.seen_deal_ids)} seen deals from {self.state_file}")
+                    self.seen_deal_ids = set(data.get("seen_deals", []))
+                    logger.debug(
+                        f"Loaded {len(self.seen_deal_ids)} seen deals from {self.state_file}"
+                    )
         except Exception as e:
             logger.warning(f"Could not load state from {self.state_file}: {e}")
             self.seen_deal_ids = set()
@@ -316,16 +326,18 @@ class DealDetector:
         try:
             # Ensure directory exists
             self.state_file.parent.mkdir(parents=True, exist_ok=True)
-            
+
             data = {
-                'seen_deals': list(self.seen_deal_ids),
-                'last_updated': datetime.now().isoformat()
+                "seen_deals": list(self.seen_deal_ids),
+                "last_updated": datetime.now().isoformat(),
             }
-            
-            with open(self.state_file, 'w') as f:
+
+            with open(self.state_file, "w") as f:
                 json.dump(data, f, indent=2)
-                
-            logger.debug(f"Saved {len(self.seen_deal_ids)} seen deals to {self.state_file}")
+
+            logger.debug(
+                f"Saved {len(self.seen_deal_ids)} seen deals to {self.state_file}"
+            )
         except Exception as e:
             logger.error(f"Could not save state to {self.state_file}: {e}")
 
@@ -334,7 +346,9 @@ class DealDetector:
         # For now, we'll keep all entries since we don't have timestamps for when they were added
         # In a production system, you'd want to store timestamps and clean up old entries
         self.last_cleanup = datetime.now()
-        logger.debug("Cleanup completed (no action taken - keeping all entries for safety)")
+        logger.debug(
+            "Cleanup completed (no action taken - keeping all entries for safety)"
+        )
 
 
 class RSSMonitor:
@@ -509,7 +523,9 @@ class RSSMonitor:
                 if asyncio.iscoroutinefunction(self.deal_callback):
                     await self.deal_callback(new_deals)
                 else:
-                    await asyncio.get_running_loop().run_in_executor(None, self.deal_callback, new_deals)
+                    await asyncio.get_running_loop().run_in_executor(
+                        None, self.deal_callback, new_deals
+                    )
 
         except Exception as e:
             logger.error(f"Error processing feed {feed_url}: {e}")
