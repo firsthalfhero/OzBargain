@@ -93,31 +93,34 @@ class FilterEngine:
 
         # Check price threshold
         price_match = self.price_filter.check_price_threshold(deal)
-        logger.debug(f"Price match for deal {deal.id}: {price_match}")
+        logger.info(f"Price match for deal {deal.id}: {price_match} (price: {deal.price}, max: {self.user_criteria.max_price})")
 
         # Check discount percentage
         discount_match = self.price_filter.check_discount_percentage(
             deal, self.user_criteria.min_discount_percentage
         )
-        logger.debug(f"Discount match for deal {deal.id}: {discount_match}")
+        logger.info(f"Discount match for deal {deal.id}: {discount_match} (discount: {deal.discount_percentage}, min: {self.user_criteria.min_discount_percentage})")
 
         # Calculate authenticity score
         authenticity_score = self.authenticity_assessor.assess_authenticity(deal)
         authenticity_match = (
             authenticity_score >= self.user_criteria.min_authenticity_score
         )
-        logger.debug(
+        logger.info(
             f"Authenticity match for deal {deal.id}: {authenticity_match} "
-            f"(score: {authenticity_score})"
+            f"(score: {authenticity_score}, min: {self.user_criteria.min_authenticity_score})"
         )
 
         # Check category match
         category_match = self._check_category_match(deal)
-        logger.debug(f"Category match for deal {deal.id}: {category_match}")
+        logger.info(f"Category match for deal {deal.id}: {category_match} (category: {deal.category}, allowed: {self.user_criteria.categories})")
 
         # Check keyword match
         keyword_match = self._check_keyword_match(deal)
-        logger.debug(f"Keyword match for deal {deal.id}: {keyword_match}")
+        logger.info(f"Keyword match for deal {deal.id}: {keyword_match} (keywords: {self.user_criteria.keywords})")
+
+        # Check LLM evaluation
+        logger.info(f"LLM evaluation for deal {deal.id}: {evaluation.is_relevant} (confidence: {evaluation.confidence_score})")
 
         # Overall pass/fail
         passes_filters = (

@@ -511,7 +511,7 @@ class ApplicationOrchestrator:
 
         # Send alert
         if self._component_health.get("message_dispatcher", False):
-            delivery_result = await self._message_dispatcher.send_alert(formatted_alert)
+            delivery_result = self._message_dispatcher.send_alert(formatted_alert)
             if delivery_result.success:
                 self.logger.info(
                     "Alert sent successfully",
