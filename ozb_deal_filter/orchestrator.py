@@ -186,6 +186,7 @@ class ApplicationOrchestrator:
             # Initialize RSS monitor with callback
             self._rss_monitor = RSSMonitor(
                 polling_interval=self._config.polling_interval,
+                max_concurrent_feeds=self._config.max_concurrent_feeds,
                 max_deal_age_hours=self._config.max_deal_age_hours,
                 deal_callback=self._handle_new_deals,
             )

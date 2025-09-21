@@ -30,7 +30,7 @@ class FeedPoller:
     def __init__(
         self,
         feed_url: str,
-        polling_interval: int = 120,
+        polling_interval: int,
         timeout: int = 30,
         max_retries: int = 3,
     ):
@@ -356,8 +356,8 @@ class RSSMonitor:
 
     def __init__(
         self,
-        polling_interval: int = 120,
-        max_concurrent_feeds: int = 10,
+        polling_interval: int,
+        max_concurrent_feeds: Optional[int] = None,
         max_deal_age_hours: int = 24,
         deal_callback: Optional[
             Union[
@@ -371,12 +371,12 @@ class RSSMonitor:
 
         Args:
             polling_interval: Default polling interval in seconds
-            max_concurrent_feeds: Maximum number of feeds to monitor
+            max_concurrent_feeds: Maximum number of feeds to monitor (optional, defaults to 10)
             max_deal_age_hours: Maximum age in hours for deals to be considered new
             deal_callback: Callback function for new deals
         """
         self.polling_interval = polling_interval
-        self.max_concurrent_feeds = max_concurrent_feeds
+        self.max_concurrent_feeds = max_concurrent_feeds or 10
         self.max_deal_age_hours = max_deal_age_hours
         self.deal_callback = deal_callback
 
