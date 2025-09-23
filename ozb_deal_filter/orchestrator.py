@@ -14,17 +14,22 @@ from typing import Any, Dict, List, Optional
 
 from .components.alert_formatter import AlertFormatter
 from .components.deal_parser import DealParser
+from .components.feed_command_processor import FeedCommandProcessor
 from .components.llm_evaluator import LLMEvaluator
 from .components.message_dispatcher import MessageDispatcherFactory
 from .components.rss_monitor import RSSMonitor
+from .components.telegram_bot_handler import TelegramBotHandler
 from .interfaces import (
     IAlertFormatter,
     IConfigurationManager,
     IDealParser,
+    IDynamicFeedManager,
+    IFeedCommandProcessor,
     IFilterEngine,
     ILLMEvaluator,
     IMessageDispatcher,
     IRSSMonitor,
+    ITelegramBotHandler,
 )
 from .models.alert import FormattedAlert
 from .models.config import Configuration
@@ -35,6 +40,7 @@ from .models.filter import FilterResult
 
 # Import concrete implementations
 from .services.config_manager import ConfigurationManager
+from .services.dynamic_feed_manager import DynamicFeedManager
 from .services.evaluation_service import EvaluationService
 from .utils.error_handling import (
     ErrorCategory,
@@ -86,6 +92,11 @@ class ApplicationOrchestrator:
         self._alert_formatter: Optional[IAlertFormatter] = None
         self._message_dispatcher: Optional[IMessageDispatcher] = None
         self._evaluation_service: Optional[EvaluationService] = None
+
+        # Telegram components
+        self._telegram_bot_handler: Optional[ITelegramBotHandler] = None
+        self._feed_command_processor: Optional[IFeedCommandProcessor] = None
+        self._dynamic_feed_manager: Optional[IDynamicFeedManager] = None
 
         # System state
         self._config: Optional[Configuration] = None
@@ -247,11 +258,91 @@ class ApplicationOrchestrator:
             self._component_health["message_dispatcher"] = True
             self.logger.info("Message dispatcher initialized")
 
+            # Initialize Telegram components if configured
+            if self._config.telegram_bot and self._config.telegram_bot.enabled:
+                await self._initialize_telegram_components()
+
             return True
 
         except Exception as e:
             self.logger.error(f"Failed to initialize components: {e}", exc_info=True)
             return False
+
+    async def _initialize_telegram_components(self) -> None:
+        """Initialize Telegram bot components."""
+        try:
+            self.logger.info("Initializing Telegram bot components...")
+
+            # Initialize dynamic feed manager
+            config_path = self.config_path or "config/config.yaml"
+            self._dynamic_feed_manager = DynamicFeedManager(config_path)
+            self._component_health["dynamic_feed_manager"] = True
+            self.logger.info("Dynamic feed manager initialized")
+
+            # Initialize feed command processor
+            self._feed_command_processor = FeedCommandProcessor(
+                rss_monitor=self._rss_monitor, feed_manager=self._dynamic_feed_manager
+            )
+            self._component_health["feed_command_processor"] = True
+            self.logger.info("Feed command processor initialized")
+
+            # Initialize Telegram bot handler
+            self._telegram_bot_handler = TelegramBotHandler(
+                bot_token=self._config.telegram_bot.bot_token,
+                authorized_users=self._config.telegram_bot.authorized_users,
+                command_processor=self._feed_command_processor,
+            )
+
+            # Test bot connection
+            if await self._telegram_bot_handler.test_connection():
+                self._component_health["telegram_bot_handler"] = True
+                self.logger.info("Telegram bot handler initialized successfully")
+
+                # Start bot polling
+                await self._telegram_bot_handler.start_polling()
+                self.logger.info("Telegram bot polling started")
+            else:
+                self._component_health["telegram_bot_handler"] = False
+                self.logger.error("Failed to connect to Telegram Bot API")
+
+            # Load and merge dynamic feeds with static feeds
+            await self._merge_dynamic_feeds()
+
+        except Exception as e:
+            self.logger.error(
+                f"Error initializing Telegram components: {e}", exc_info=True
+            )
+            self._component_health.update(
+                {
+                    "telegram_bot_handler": False,
+                    "feed_command_processor": False,
+                    "dynamic_feed_manager": False,
+                }
+            )
+
+    async def _merge_dynamic_feeds(self) -> None:
+        """Merge dynamic feeds with RSS monitor."""
+        try:
+            if not self._dynamic_feed_manager:
+                return
+
+            # Get dynamic feeds
+            dynamic_feeds = self._dynamic_feed_manager.list_feed_configs()
+
+            if dynamic_feeds:
+                self.logger.info(f"Loading {len(dynamic_feeds)} dynamic feeds...")
+
+                # Add dynamic feeds to RSS monitor
+                for feed_config in dynamic_feeds:
+                    if hasattr(self._rss_monitor, "add_feed_dynamic"):
+                        self._rss_monitor.add_feed_dynamic(feed_config)
+                    else:
+                        self._rss_monitor.add_feed(feed_config.url)
+
+                self.logger.info("Dynamic feeds merged with RSS monitor")
+
+        except Exception as e:
+            self.logger.error(f"Error merging dynamic feeds: {e}")
 
     async def _validate_components(self) -> bool:
         """Validate that all components are working correctly."""
@@ -676,6 +767,14 @@ class ApplicationOrchestrator:
         self._shutdown_event.set()
 
         try:
+            # Stop Telegram bot first
+            if self._telegram_bot_handler:
+                try:
+                    await self._telegram_bot_handler.stop_polling()
+                    self.logger.info("Telegram bot stopped")
+                except Exception as e:
+                    self.logger.error(f"Error stopping Telegram bot: {e}")
+
             # Stop RSS monitoring
             if self._rss_monitor:
                 await self._rss_monitor.stop_monitoring()

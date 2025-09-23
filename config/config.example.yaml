@@ -1,12 +1,30 @@
 # Example configuration file for OzBargain Deal Filter
 # Copy this to config.yaml and customize for your setup
+#
+# TELEGRAM BOT SETUP INSTRUCTIONS:
+# 1. Create a bot: Message @BotFather on Telegram and use /newbot command
+# 2. Get your bot token from @BotFather and set TELEGRAM_BOT_TOKEN environment variable
+# 3. Get your user ID: Message @userinfobot on Telegram to get your user ID
+# 4. Set TELEGRAM_USER_ID environment variable with your user ID
+# 5. Start the application and message your bot to manage RSS feeds dynamically
+#
+# Available bot commands:
+# /add_feed <url> [name] - Add a new RSS feed
+# /remove_feed <url> - Remove an RSS feed
+# /list_feeds - Show all feeds
+# /feed_status - Get monitoring status
+# /help - Show help message
 
 rss_feeds:
   - "https://www.ozbargain.com.au/deals/feed"
   - "https://www.ozbargain.com.au/cat/computing/feed"
 
+# Dynamic feeds managed via Telegram bot (optional)
+# These are automatically updated when using /add_feed and /remove_feed commands
+dynamic_feeds: []
+
 user_criteria:
-  prompt_template: "prompts/deal_evaluator.txt"
+  prompt_template_path: "prompts/deal_evaluator.txt"
   max_price: 500.0
   min_discount_percentage: 20.0
   categories: ["Computing", "Electronics"]
@@ -29,8 +47,17 @@ messaging_platform:
     bot_token: "${TELEGRAM_BOT_TOKEN}"
     chat_id: "${TELEGRAM_CHAT_ID}"
 
-system:
-  polling_interval: 120  # seconds
-  max_concurrent_feeds: 10
-  alert_timeout: 300  # 5 minutes for regular deals
-  urgent_alert_timeout: 120  # 2 minutes for urgent deals
+# Telegram Bot Configuration (for dynamic feed management)
+telegram_bot:
+  enabled: true  # Set to false to disable Telegram bot functionality
+  bot_token: "${TELEGRAM_BOT_TOKEN}"  # Get from @BotFather on Telegram
+  authorized_users:  # Telegram user IDs allowed to manage feeds
+    - "${TELEGRAM_USER_ID}"  # Replace with your Telegram user ID
+    # - "123456789"  # Add more authorized users as needed
+  max_commands_per_minute: 30  # Global rate limit
+  max_commands_per_user_per_minute: 10  # Per-user rate limit
+
+# System Configuration
+polling_interval: 120  # seconds between RSS feed checks
+max_concurrent_feeds: 10  # maximum number of feeds to monitor
+max_deal_age_hours: 24  # only process deals newer than this many hours

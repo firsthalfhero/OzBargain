@@ -529,3 +529,196 @@ class RSSMonitor:
 
         except Exception as e:
             logger.error(f"Error processing feed {feed_url}: {e}")
+
+    def add_feed_dynamic(self, feed_config) -> bool:
+        """
+        Add feed with enhanced metadata for dynamic management.
+
+        Args:
+            feed_config: FeedConfig object with metadata
+
+        Returns:
+            True if feed was added successfully
+        """
+        if len(self.feed_pollers) >= self.max_concurrent_feeds:
+            logger.error(
+                f"Cannot add feed: maximum of {self.max_concurrent_feeds} feeds allowed"
+            )
+            return False
+
+        if feed_config.url in self.feed_pollers:
+            logger.warning(f"Feed already being monitored: {feed_config.url}")
+            return True
+
+        try:
+            poller = FeedPoller(feed_config.url, self.polling_interval)
+
+            # Add metadata for dynamic feeds
+            poller.metadata = {
+                "name": feed_config.name,
+                "added_by": feed_config.added_by,
+                "added_at": feed_config.added_at,
+                "enabled": feed_config.enabled,
+                "is_dynamic": True,
+            }
+
+            self.feed_pollers[feed_config.url] = poller
+            logger.info(
+                f"Added dynamic RSS feed: {feed_config.name or feed_config.url}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Error adding dynamic RSS feed {feed_config.url}: {e}")
+            return False
+
+    def remove_feed_dynamic(self, identifier: str) -> bool:
+        """
+        Remove feed by URL or name with validation.
+
+        Args:
+            identifier: Feed URL or name
+
+        Returns:
+            True if feed was removed successfully
+        """
+        feed_url_to_remove = None
+
+        # Find feed by URL or name
+        for url, poller in self.feed_pollers.items():
+            if url == identifier:
+                feed_url_to_remove = url
+                break
+
+            # Check metadata for name match
+            if hasattr(poller, "metadata") and poller.metadata:
+                if poller.metadata.get("name") == identifier:
+                    feed_url_to_remove = url
+                    break
+
+        if not feed_url_to_remove:
+            logger.warning(f"Feed not found for removal: {identifier}")
+            return False
+
+        return self.remove_feed(feed_url_to_remove)
+
+    def get_feed_status(self, identifier: str = None) -> dict:
+        """
+        Get detailed feed status information.
+
+        Args:
+            identifier: Optional feed URL or name for specific feed status
+
+        Returns:
+            Dictionary with feed status information
+        """
+        try:
+            if identifier:
+                # Return status for specific feed
+                feed_info = self._find_feed_by_identifier(identifier)
+                if not feed_info:
+                    return {"error": "Feed not found"}
+
+                url, poller = feed_info
+                return self._get_single_feed_status(url, poller)
+            else:
+                # Return status for all feeds
+                active_feeds = sum(
+                    1 for poller in self.feed_pollers.values() if poller.is_active
+                )
+
+                feeds_status = []
+                for url, poller in self.feed_pollers.items():
+                    feeds_status.append(self._get_single_feed_status(url, poller))
+
+                return {
+                    "total_feeds": len(self.feed_pollers),
+                    "active_feeds": active_feeds,
+                    "monitor_running": self.is_monitoring,
+                    "feeds": feeds_status,
+                }
+
+        except Exception as e:
+            logger.error(f"Error getting feed status: {e}")
+            return {"error": f"Status check failed: {str(e)}"}
+
+    def _find_feed_by_identifier(self, identifier: str):
+        """Find feed by URL or name."""
+        for url, poller in self.feed_pollers.items():
+            if url == identifier:
+                return (url, poller)
+
+            # Check metadata for name match
+            if hasattr(poller, "metadata") and poller.metadata:
+                if poller.metadata.get("name") == identifier:
+                    return (url, poller)
+
+        return None
+
+    def _get_single_feed_status(self, url: str, poller: FeedPoller) -> dict:
+        """Get status information for a single feed."""
+        metadata = getattr(poller, "metadata", {})
+
+        return {
+            "url": url,
+            "name": metadata.get("name", self._extract_domain(url)),
+            "is_active": poller.is_active,
+            "is_healthy": poller.is_healthy(),
+            "consecutive_failures": poller.consecutive_failures,
+            "last_poll_time": poller.last_poll_time.isoformat()
+            if poller.last_poll_time
+            else None,
+            "added_by": metadata.get("added_by", "unknown"),
+            "added_at": metadata.get("added_at").isoformat()
+            if metadata.get("added_at")
+            else None,
+            "enabled": metadata.get("enabled", True),
+            "is_dynamic": metadata.get("is_dynamic", False),
+        }
+
+    def _extract_domain(self, url: str) -> str:
+        """Extract domain name from URL for display."""
+        try:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(url)
+            domain = parsed.netloc
+            if domain.startswith("www."):
+                domain = domain[4:]
+            return domain
+        except Exception:
+            return url
+
+    def reload_feeds(self, feed_urls: list) -> bool:
+        """
+        Reload feeds with new configuration.
+
+        Args:
+            feed_urls: List of feed URLs to monitor
+
+        Returns:
+            True if reload was successful
+        """
+        try:
+            logger.info("Reloading RSS feeds...")
+
+            # Get current feed URLs
+            current_urls = set(self.feed_pollers.keys())
+            new_urls = set(feed_urls)
+
+            # Remove feeds that are no longer in the list
+            for url in current_urls - new_urls:
+                self.remove_feed(url)
+
+            # Add new feeds
+            for url in new_urls - current_urls:
+                self.add_feed(url)
+
+            logger.info(
+                f"Feed reload completed. Now monitoring {len(self.feed_pollers)} feeds"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Error reloading feeds: {e}")
+            return False

@@ -186,6 +186,64 @@ class UserCriteria:
 
 
 @dataclass
+class TelegramBotConfig:
+    """Configuration for Telegram bot functionality."""
+
+    enabled: bool
+    bot_token: str
+    authorized_users: List[str]
+    max_commands_per_minute: int = 30
+    max_commands_per_user_per_minute: int = 10
+
+    def validate(self) -> bool:
+        """Validate Telegram bot configuration."""
+        if not isinstance(self.enabled, bool):
+            raise ValueError("Telegram bot enabled must be a boolean")
+
+        if self.enabled:
+            if not self.bot_token or not self.bot_token.strip():
+                raise ValueError("Bot token is required when Telegram bot is enabled")
+
+            # Basic bot token format validation
+            if not self.bot_token.count(":") == 1:
+                raise ValueError("Invalid bot token format")
+
+            token_parts = self.bot_token.split(":")
+            if not (token_parts[0].isdigit() and len(token_parts[1]) >= 35):
+                raise ValueError("Invalid bot token format")
+
+            if not isinstance(self.authorized_users, list):
+                raise ValueError("Authorized users must be a list")
+
+            if not self.authorized_users:
+                raise ValueError(
+                    "At least one authorized user must be configured when bot is enabled"
+                )
+
+            for user_id in self.authorized_users:
+                if not isinstance(user_id, str) or not user_id.strip():
+                    raise ValueError(
+                        "All authorized user IDs must be non-empty strings"
+                    )
+
+            if (
+                not isinstance(self.max_commands_per_minute, int)
+                or self.max_commands_per_minute <= 0
+            ):
+                raise ValueError("Max commands per minute must be a positive integer")
+
+            if (
+                not isinstance(self.max_commands_per_user_per_minute, int)
+                or self.max_commands_per_user_per_minute <= 0
+            ):
+                raise ValueError(
+                    "Max commands per user per minute must be a positive integer"
+                )
+
+        return True
+
+
+@dataclass
 class Configuration:
     """System configuration."""
 
@@ -196,6 +254,8 @@ class Configuration:
     polling_interval: int
     max_concurrent_feeds: int
     max_deal_age_hours: int = 24  # Only process deals newer than this many hours
+    telegram_bot: Optional[TelegramBotConfig] = None
+    dynamic_feeds: List[str] = None  # Dynamic feeds managed via Telegram
 
     def validate(self) -> bool:
         """Validate system configuration."""
@@ -242,9 +302,31 @@ class Configuration:
         if self.max_deal_age_hours > 168:  # 1 week
             raise ValueError("Max deal age hours cannot exceed 168 (1 week)")
 
+        # Validate dynamic feeds if provided
+        if self.dynamic_feeds is not None:
+            if not isinstance(self.dynamic_feeds, list):
+                raise ValueError("Dynamic feeds must be a list")
+
+            for feed_url in self.dynamic_feeds:
+                if not isinstance(feed_url, str) or not feed_url.strip():
+                    raise ValueError("All dynamic feed URLs must be non-empty strings")
+
+                # Validate URL format
+                parsed_url = urlparse(feed_url)
+                if not parsed_url.scheme or not parsed_url.netloc:
+                    raise ValueError(f"Invalid dynamic feed URL format: {feed_url}")
+
+                if parsed_url.scheme not in ["http", "https"]:
+                    raise ValueError(
+                        f"Dynamic feed URL must use HTTP or HTTPS: {feed_url}"
+                    )
+
         # Validate nested configurations
         self.user_criteria.validate()
         self.llm_provider.validate()
         self.messaging_platform.validate()
+
+        if self.telegram_bot is not None:
+            self.telegram_bot.validate()
 
         return True
