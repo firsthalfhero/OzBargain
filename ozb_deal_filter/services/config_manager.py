@@ -162,6 +162,24 @@ class ConfigurationManager(IConfigurationManager):
             # Parse system settings
             system_data = raw_config.get("system", {})
 
+            # Parse telegram bot config
+            telegram_bot_data = raw_config.get("telegram_bot")
+            telegram_bot = None
+            if telegram_bot_data:
+                from ..models.config import TelegramBotConfig
+
+                telegram_bot = TelegramBotConfig(
+                    enabled=telegram_bot_data.get("enabled", False),
+                    bot_token=telegram_bot_data.get("bot_token", ""),
+                    authorized_users=telegram_bot_data.get("authorized_users", []),
+                    max_commands_per_minute=telegram_bot_data.get(
+                        "max_commands_per_minute", 30
+                    ),
+                    max_commands_per_user_per_minute=telegram_bot_data.get(
+                        "max_commands_per_user_per_minute", 10
+                    ),
+                )
+
             return Configuration(
                 rss_feeds=raw_config.get("rss_feeds", []),
                 user_criteria=user_criteria,
@@ -169,6 +187,9 @@ class ConfigurationManager(IConfigurationManager):
                 messaging_platform=messaging_platform,
                 polling_interval=system_data.get("polling_interval", 120),
                 max_concurrent_feeds=system_data.get("max_concurrent_feeds", 10),
+                max_deal_age_hours=system_data.get("max_deal_age_hours", 24),
+                dynamic_feeds=raw_config.get("dynamic_feeds"),
+                telegram_bot=telegram_bot,
             )
 
         except KeyError as e:

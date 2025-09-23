@@ -1,0 +1,63 @@
+# Example configuration file for OzBargain Deal Filter
+# Copy this to config.yaml and customize for your setup
+
+rss_feeds:
+  - "https://www.ozbargain.com.au/deals/feed"
+  - "https://www.ozbargain.com.au/cat/computing/feed"
+  - "https://www.ozbargain.com.au/product/insta360-go-3/feed"
+  - "https://www.ozbargain.com.au/tag/iphone/feed"
+  - "https://www.ozbargain.com.au/product/iphone-16/feed"
+  - "https://www.ozbargain.com.au/product/iphone-15/feed"
+  - "https://www.ozbargain.com.au/product/iphone-14/feed"
+  - "https://www.ozbargain.com.au/product/iphone-16-pro/feed"
+  - "https://www.ozbargain.com.au/product/iphone-16-plus/feed"
+  - "https://www.ozbargain.com.au/product/iphone-16e/feed"
+  - "https://www.ozbargain.com.au/product/iphone-16/feed"
+  - "https://www.ozbargain.com.au/tag/table-tennis-bat/feed"
+  - "https://www.ozbargain.com.au/tag/table-tennis-accessory/feed"
+  - "https://www.ozbargain.com.au/tag/steam-game/feed"
+  - "https://www.ozbargain.com.au/brand/music-streaming%2Bapple/feed"
+
+
+
+
+user_criteria:
+  prompt_template: "prompts/deal_evaluator.txt"
+  max_price: 2000.0
+  min_discount_percentage: 20.0
+  min_authenticity_score: 0.5
+
+llm_provider:
+  type: "local"  # or "api"
+  local:
+    model: "llama2:7b"
+    docker_image: "ollama/ollama"
+    base_url: "http://ollama:11434"  # Use Docker service name
+
+    timeout: 90  # Increase timeout for model loading
+  api:
+    provider: "openai"
+    api_key: "${OPENAI_API_KEY}"  # Only needed when type is "api"
+    model: "gpt-3.5-turbo"
+
+messaging_platform:
+  type: "telegram"
+  telegram:
+    bot_token: "8255201714:AAGYlyN-zrH89v8UqrMHwWLhoa3AA-nGkIY"
+    chat_id: "8020983439"
+
+system:
+  polling_interval: 320  # seconds
+  max_concurrent_feeds: 30
+  max_deal_age_hours: 24  # Only process deals newer than 24 hours
+  alert_timeout: 300  # 5 minutes for regular deals
+  urgent_alert_timeout: 120  # 2 minutes for urgent deals
+
+# Telegram Bot Configuration for Feed Management
+telegram_bot:
+  enabled: true
+  bot_token: "8255201714:AAGYlyN-zrH89v8UqrMHwWLhoa3AA-nGkIY"
+  authorized_users:
+    - "8020983439"  # George C
+  max_commands_per_minute: 30
+  max_commands_per_user_per_minute: 10

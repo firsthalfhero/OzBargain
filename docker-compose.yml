@@ -6,8 +6,9 @@ services:
     env_file:
       - .env
     volumes:
-      # Configuration files
-      - ./config:/app/config:ro
+      # Configuration files (read-only main config, writable directory for dynamic feeds)
+      - ./config/config.yaml:/app/config/config.yaml:ro
+      - ./config:/app/config
       # Prompt templates
       - ./prompts:/app/prompts:ro
       # Logs directory

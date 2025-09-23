@@ -64,6 +64,7 @@ class Deal:
     votes: Optional[int]
     comments: Optional[int]
     urgency_indicators: List[str]
+    feed_source: Optional[str] = None  # Name or URL of the feed this deal came from
 
     def validate(self) -> bool:
         """Validate the deal data."""

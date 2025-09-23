@@ -194,7 +194,12 @@ class AlertFormatter(IAlertFormatter):
             lines.append(price_line)
 
         # Category
-        lines.append(f"📂 **Category:** {deal.category}")
+        if deal.category:
+            lines.append(f"📂 **Category:** {deal.category}")
+
+        # Feed source
+        if deal.feed_source:
+            lines.append(f"📡 **Feed:** {deal.feed_source}")
 
         # Authenticity score
         if filter_result.authenticity_score > 0:
@@ -286,6 +291,10 @@ class AlertFormatter(IAlertFormatter):
         # Category
         message_lines.append(f"📂 <b>Category:</b> {deal.category}")
 
+        # Feed source
+        if deal.feed_source:
+            message_lines.append(f"📡 <b>Feed:</b> {deal.feed_source}")
+
         # Authenticity
         if filter_result.authenticity_score > 0:
             score_emoji = (
@@ -353,6 +362,16 @@ class AlertFormatter(IAlertFormatter):
                 "inline": True,
             }
         )
+
+        # Feed source field
+        if deal.feed_source:
+            fields.append(
+                {
+                    "name": "📡 Feed",
+                    "value": deal.feed_source,
+                    "inline": True,
+                }
+            )
 
         # Authenticity field
         if filter_result.authenticity_score > 0:
@@ -427,6 +446,9 @@ class AlertFormatter(IAlertFormatter):
             fields.append({"type": "mrkdwn", "text": f"*💰 Price:*\n{price_text}"})
 
         fields.append({"type": "mrkdwn", "text": f"*📂 Category:*\n{deal.category}"})
+
+        if deal.feed_source:
+            fields.append({"type": "mrkdwn", "text": f"*📡 Feed:*\n{deal.feed_source}"})
 
         if filter_result.authenticity_score > 0:
             score_emoji = (
@@ -516,6 +538,10 @@ class AlertFormatter(IAlertFormatter):
 
         # Category
         lines.append(f"📂 *Category:* {deal.category}")
+
+        # Feed source
+        if deal.feed_source:
+            lines.append(f"📡 *Feed:* {deal.feed_source}")
 
         # Authenticity
         if filter_result.authenticity_score > 0:
