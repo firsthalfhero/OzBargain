@@ -224,7 +224,7 @@ Quality checks include:
    ```bash
    # Pull latest changes
    git pull origin main
-   
+
    # Run fast checks
    make dev-check
    ```
@@ -238,10 +238,10 @@ Quality checks include:
    ```bash
    # Auto-fix formatting
    make quality-fix
-   
+
    # Run comprehensive checks
    make quality-check
-   
+
    # Run relevant tests
    make test-unit
    ```
@@ -251,14 +251,14 @@ Quality checks include:
    git add .
    git commit -m "feat: [Task X.X] Description of changes"
    ```
-   
+
    Pre-commit hooks will automatically run and validate your changes.
 
 5. **Before pushing**:
    ```bash
    # Full CI simulation
    make ci-check
-   
+
    git push origin main
    ```
 
@@ -269,10 +269,10 @@ Quality checks include:
    def test_new_feature():
        # Arrange
        component = MyComponent()
-       
+
        # Act
        result = component.new_feature()
-       
+
        # Assert
        assert result.is_valid
    ```

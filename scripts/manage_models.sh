@@ -38,10 +38,10 @@ get_installed_models() {
 
 install_model() {
     local model_name="$1"
-    
+
     print_color "Installing model: $model_name" $BLUE
     print_color "This may take several minutes depending on model size..." $YELLOW
-    
+
     if docker exec ollama ollama pull "$model_name"; then
         print_color "Successfully installed model: $model_name" $GREEN
         return 0
@@ -53,9 +53,9 @@ install_model() {
 
 remove_model() {
     local model_name="$1"
-    
+
     print_color "Removing model: $model_name" $YELLOW
-    
+
     if docker exec ollama ollama rm "$model_name"; then
         print_color "Successfully removed model: $model_name" $GREEN
         return 0
@@ -67,21 +67,21 @@ remove_model() {
 
 test_model_evaluation() {
     local model_name="$1"
-    
+
     print_color "Testing model evaluation: $model_name" $BLUE
-    
+
     local test_prompt='{
         "model": "'$model_name'",
         "prompt": "Analyze this deal: '\''iPhone 14 Pro 128GB - $899 (was $1399, save $500)'\''. Is this a good deal for electronics enthusiasts? Respond with YES or NO and brief reasoning.",
         "stream": false
     }'
-    
+
     local response
     if response=$(curl -s -X POST http://localhost:11434/api/generate \
         -H "Content-Type: application/json" \
         -d "$test_prompt" \
         --max-time 30); then
-        
+
         print_color "Model Response:" $GREEN
         echo "$response" | jq -r '.response // "No response received"'
         print_color "Evaluation completed successfully!" $GREEN
@@ -95,14 +95,14 @@ test_model_evaluation() {
 show_model_status() {
     print_color "Ollama Model Status" $BLUE
     print_color "==================" $BLUE
-    
+
     if ! check_ollama_running; then
         return 1
     fi
-    
+
     local installed_models
     installed_models=$(get_installed_models)
-    
+
     print_color "\nInstalled Models:" $YELLOW
     if [ -z "$installed_models" ]; then
         print_color "No models installed" $RED
@@ -111,23 +111,23 @@ show_model_status() {
             [ -n "$model" ] && print_color "  - $model" $GREEN
         done <<< "$installed_models"
     fi
-    
+
     print_color "\nRecommended Models:" $YELLOW
     for key in "${!RECOMMENDED_MODELS[@]}"; do
         IFS='|' read -r name description size recommended <<< "${RECOMMENDED_MODELS[$key]}"
-        
+
         local status="NOT INSTALLED"
         local color=$RED
         if echo "$installed_models" | grep -q "^$name$"; then
             status="INSTALLED"
             color=$GREEN
         fi
-        
+
         local rec_text=""
         if [ "$recommended" = "true" ]; then
             rec_text=" (RECOMMENDED)"
         fi
-        
+
         print_color "  - $name - $description$rec_text" $NC
         printf "    Size: $size | Status: "
         print_color "$status" $color
@@ -137,7 +137,7 @@ show_model_status() {
 list_models() {
     local models
     models=$(get_installed_models)
-    
+
     print_color "Installed Models:" $BLUE
     if [ -z "$models" ]; then
         print_color "No models installed" $RED

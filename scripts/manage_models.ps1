@@ -76,10 +76,10 @@ function Get-InstalledModels {
 
 function Install-Model {
     param([string]$ModelName)
-    
+
     Write-ColorOutput "Installing model: $ModelName" $Blue
     Write-ColorOutput "This may take several minutes depending on model size..." $Yellow
-    
+
     try {
         # Use docker exec to pull the model
         $result = docker exec ollama ollama pull $ModelName
@@ -100,9 +100,9 @@ function Install-Model {
 
 function Remove-Model {
     param([string]$ModelName)
-    
+
     Write-ColorOutput "Removing model: $ModelName" $Yellow
-    
+
     try {
         $result = docker exec ollama ollama rm $ModelName
         if ($LASTEXITCODE -eq 0) {
@@ -122,18 +122,18 @@ function Remove-Model {
 
 function Test-ModelEvaluation {
     param([string]$ModelName)
-    
+
     Write-ColorOutput "Testing model evaluation: $ModelName" $Blue
-    
+
     $testPrompt = @{
         model = $ModelName
         prompt = "Analyze this deal: 'iPhone 14 Pro 128GB - $899 (was $1399, save $500)'. Is this a good deal for electronics enthusiasts? Respond with YES or NO and brief reasoning."
         stream = $false
     } | ConvertTo-Json
-    
+
     try {
         $response = Invoke-RestMethod -Uri "http://localhost:11434/api/generate" -Method POST -Body $testPrompt -ContentType "application/json" -TimeoutSec 30
-        
+
         Write-ColorOutput "Model Response:" $Green
         Write-ColorOutput $response.response $Reset
         Write-ColorOutput "Evaluation completed successfully!" $Green
@@ -148,13 +148,13 @@ function Test-ModelEvaluation {
 function Show-ModelStatus {
     Write-ColorOutput "Ollama Model Status" $Blue
     Write-ColorOutput "==================" $Blue
-    
+
     if (-not (Test-OllamaRunning)) {
         return
     }
-    
+
     $installedModels = Get-InstalledModels
-    
+
     Write-ColorOutput "`nInstalled Models:" $Yellow
     if ($installedModels.Count -eq 0) {
         Write-ColorOutput "No models installed" $Red
@@ -165,14 +165,14 @@ function Show-ModelStatus {
             Write-ColorOutput "  - $($model.name) (${sizeGB}GB)" $Green
         }
     }
-    
+
     Write-ColorOutput "`nRecommended Models:" $Yellow
     foreach ($key in $RecommendedModels.Keys) {
         $model = $RecommendedModels[$key]
         $status = if ($installedModels.name -contains $model.name) { "INSTALLED" } else { "NOT INSTALLED" }
         $color = if ($installedModels.name -contains $model.name) { $Green } else { $Red }
         $recommended = if ($model.recommended) { " (RECOMMENDED)" } else { "" }
-        
+
         Write-ColorOutput "  - $($model.name) - $($model.description)$recommended" $Reset
         Write-ColorOutput "    Size: $($model.size) | Status: " -NoNewline
         Write-ColorOutput $status $color

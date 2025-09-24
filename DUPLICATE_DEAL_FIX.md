@@ -33,7 +33,7 @@ class DealDetector:
         self.state_file = Path(state_file)
         self.seen_deal_ids: Set[str] = set()
         self._load_state()  # Load previously seen deals
-    
+
     def _save_state(self):
         # Save seen deals to JSON file after each processing
 ```
@@ -107,10 +107,10 @@ The FilterEngine now properly detects expired deals using patterns like:
 
 ## Testing Results
 
-✅ **Time-based filtering** - Only processes recent deals  
-✅ **Persistent state** - Remembers seen deals across restarts  
-✅ **Expired deal filtering** - Properly filters out expired deals  
-✅ **Real RSS feed testing** - Works with actual OzBargain feeds  
+✅ **Time-based filtering** - Only processes recent deals
+✅ **Persistent state** - Remembers seen deals across restarts
+✅ **Expired deal filtering** - Properly filters out expired deals
+✅ **Real RSS feed testing** - Works with actual OzBargain feeds
 
 ## Configuration Options
 

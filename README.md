@@ -62,7 +62,7 @@ This project follows PEP 8 standards and uses type hints throughout. The archite
 ### Key Components
 
 - **RSS Monitor**: Polls configured feeds for new deals
-- **Deal Parser**: Extracts structured data from RSS entries  
+- **Deal Parser**: Extracts structured data from RSS entries
 - **LLM Evaluator**: Uses AI to assess deal relevance
 - **Filter Engine**: Applies price, discount, authenticity, and expiration filters
 - **Alert Formatter**: Creates rich notification messages

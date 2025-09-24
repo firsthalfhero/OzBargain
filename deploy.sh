@@ -21,7 +21,7 @@ check_docker() {
         print_color "Docker is not installed!" $RED
         exit 1
     fi
-    
+
     if ! docker info &> /dev/null; then
         print_color "Docker is not running!" $RED
         exit 1

@@ -6,12 +6,12 @@ This script provides various test execution modes including unit tests,
 integration tests, performance benchmarks, and coverage reporting.
 """
 
+import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
-import argparse
 from typing import List, Optional
-import os
 
 
 class TestRunner:
@@ -26,21 +26,17 @@ class TestRunner:
         """Run a command and return success status."""
         print(f"\n🧪 {description}...")
         print(f"Running: {' '.join(command)}")
-        
+
         try:
-            result = subprocess.run(
-                command,
-                cwd=self.project_root,
-                check=False
-            )
-            
+            result = subprocess.run(command, cwd=self.project_root, check=False)
+
             if result.returncode == 0:
                 print(f"✅ {description} completed successfully")
                 return True
             else:
                 print(f"❌ {description} failed with exit code {result.returncode}")
                 return False
-                
+
         except FileNotFoundError:
             print(f"❌ {description} failed - pytest not found")
             return False
@@ -131,19 +127,19 @@ class TestRunner:
     def run_all_tests(self, verbose: bool = False, parallel: bool = False) -> bool:
         """Run all tests with comprehensive reporting."""
         cmd = ["pytest"]
-        
+
         if parallel:
             cmd.extend(["-n", "auto"])
-        
+
         if verbose:
             cmd.append("-v")
-            
+
         return self.run_command(cmd, "All tests")
 
     def generate_test_report(self) -> bool:
         """Generate comprehensive test report."""
         print("\n📊 Generating comprehensive test report...")
-        
+
         # Run tests with all reporting enabled
         cmd = [
             "pytest",
@@ -155,24 +151,28 @@ class TestRunner:
             "--self-contained-html",
             "--json-report",
             "--json-report-file=reports/pytest_report.json",
-            "-v"
+            "-v",
         ]
-        
+
         success = self.run_command(cmd, "Test report generation")
-        
+
         if success:
             print("\n📋 Test reports generated:")
             print(f"  - HTML coverage: {self.project_root}/htmlcov/index.html")
             print(f"  - XML coverage: {self.project_root}/coverage.xml")
-            print(f"  - HTML test report: {self.project_root}/reports/pytest_report.html")
-            print(f"  - JSON test report: {self.project_root}/reports/pytest_report.json")
-        
+            print(
+                f"  - HTML test report: {self.project_root}/reports/pytest_report.html"
+            )
+            print(
+                f"  - JSON test report: {self.project_root}/reports/pytest_report.json"
+            )
+
         return success
 
     def clean_test_artifacts(self) -> None:
         """Clean up test artifacts and cache files."""
         print("\n🧹 Cleaning test artifacts...")
-        
+
         artifacts = [
             ".pytest_cache",
             ".coverage",
@@ -182,25 +182,27 @@ class TestRunner:
             ".mypy_cache",
             "__pycache__",
         ]
-        
+
         for artifact in artifacts:
             artifact_path = self.project_root / artifact
             if artifact_path.exists():
                 if artifact_path.is_dir():
                     import shutil
+
                     shutil.rmtree(artifact_path)
                     print(f"  Removed directory: {artifact}")
                 else:
                     artifact_path.unlink()
                     print(f"  Removed file: {artifact}")
-        
+
         # Find and remove __pycache__ directories recursively
         for pycache in self.project_root.rglob("__pycache__"):
             if pycache.is_dir():
                 import shutil
+
                 shutil.rmtree(pycache)
                 print(f"  Removed: {pycache}")
-        
+
         print("✅ Test artifacts cleaned")
 
 
@@ -209,33 +211,23 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run tests with various configurations"
     )
-    
+
     # Test selection arguments
-    parser.add_argument(
-        "--unit", action="store_true", help="Run unit tests only"
-    )
+    parser.add_argument("--unit", action="store_true", help="Run unit tests only")
     parser.add_argument(
         "--integration", action="store_true", help="Run integration tests only"
     )
-    parser.add_argument(
-        "--fast", action="store_true", help="Run fast tests only"
-    )
-    parser.add_argument(
-        "--slow", action="store_true", help="Run slow tests only"
-    )
-    parser.add_argument(
-        "--network", action="store_true", help="Run network tests only"
-    )
-    parser.add_argument(
-        "--docker", action="store_true", help="Run Docker tests only"
-    )
+    parser.add_argument("--fast", action="store_true", help="Run fast tests only")
+    parser.add_argument("--slow", action="store_true", help="Run slow tests only")
+    parser.add_argument("--network", action="store_true", help="Run network tests only")
+    parser.add_argument("--docker", action="store_true", help="Run Docker tests only")
     parser.add_argument(
         "--benchmark", action="store_true", help="Run benchmark tests only"
     )
     parser.add_argument(
         "--failed", action="store_true", help="Re-run failed tests from last run"
     )
-    
+
     # Test execution options
     parser.add_argument(
         "--coverage", action="store_true", help="Run with coverage reporting"
@@ -243,51 +235,41 @@ def main():
     parser.add_argument(
         "--min-coverage", type=int, default=85, help="Minimum coverage percentage"
     )
-    parser.add_argument(
-        "--parallel", action="store_true", help="Run tests in parallel"
-    )
-    parser.add_argument(
-        "--workers", type=int, help="Number of parallel workers"
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Verbose output"
-    )
-    
+    parser.add_argument("--parallel", action="store_true", help="Run tests in parallel")
+    parser.add_argument("--workers", type=int, help="Number of parallel workers")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+
     # Utility options
     parser.add_argument(
         "--report", action="store_true", help="Generate comprehensive test report"
     )
-    parser.add_argument(
-        "--clean", action="store_true", help="Clean test artifacts"
-    )
-    parser.add_argument(
-        "--test", type=str, help="Run specific test file or function"
-    )
+    parser.add_argument("--clean", action="store_true", help="Clean test artifacts")
+    parser.add_argument("--test", type=str, help="Run specific test file or function")
     parser.add_argument(
         "--project-root", type=Path, default=Path.cwd(), help="Project root directory"
     )
-    
+
     args = parser.parse_args()
-    
+
     runner = TestRunner(args.project_root)
-    
+
     # Handle utility commands first
     if args.clean:
         runner.clean_test_artifacts()
         return
-    
+
     if args.report:
         success = runner.generate_test_report()
         sys.exit(0 if success else 1)
-    
+
     # Handle specific test
     if args.test:
         success = runner.run_specific_test(args.test, args.verbose)
         sys.exit(0 if success else 1)
-    
+
     # Handle test selection
     success = True
-    
+
     if args.unit:
         success = runner.run_unit_tests(args.verbose)
     elif args.integration:
@@ -311,7 +293,7 @@ def main():
     else:
         # Default: run all tests
         success = runner.run_all_tests(args.verbose, args.parallel)
-    
+
     sys.exit(0 if success else 1)
 
 

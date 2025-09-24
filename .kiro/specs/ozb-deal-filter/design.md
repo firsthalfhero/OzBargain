@@ -15,14 +15,14 @@ graph TB
     C --> D[Filter Engine]
     D --> E[Alert Formatter]
     E --> F[Message Dispatcher]
-    
+
     G[Configuration Manager] --> A
     G --> C
     G --> D
     G --> F
-    
+
     H[Git Agent] --> I[Repository]
-    
+
     J[Docker Container] --> A
     J --> C
     J --> F
@@ -480,7 +480,7 @@ services:
     environment:
       - CONFIG_PATH=/app/config/config.yaml
     restart: unless-stopped
-  
+
   ollama:
     image: ollama/ollama
     ports:

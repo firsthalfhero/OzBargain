@@ -1,0 +1,10 @@
+2025-09-24 21:21:01,563 - ozb_deal_filter.feed_command_processor - INFO - {"timestamp": "2025-09-24T21:21:01.563630", "component": "feed_command_processor", "message": "Feed command processor initialized"}
+2025-09-24 21:21:02,719 - ozb_deal_filter.feed_command_processor - INFO - {"timestamp": "2025-09-24T21:21:02.719781", "component": "feed_command_processor", "message": "Feed command processor initialized"}
+2025-09-24 21:21:02,723 - ozb_deal_filter.feed_command_processor - INFO - {"timestamp": "2025-09-24T21:21:02.723775", "component": "feed_command_processor", "message": "Feed command processor initialized"}
+2025-09-24 21:21:02,731 - ozb_deal_filter.feed_command_processor - INFO - {"timestamp": "2025-09-24T21:21:02.731287", "component": "feed_command_processor", "message": "Feed command processor initialized"}
+2025-09-24 21:21:02,734 - ozb_deal_filter.telegram_authorizer - INFO - {"timestamp": "2025-09-24T21:21:02.734798", "component": "telegram_authorizer", "message": "Telegram authorizer initialized with 2 authorized users"}
+2025-09-24 21:21:02,736 - ozb_deal_filter.telegram_authorizer - INFO - {"timestamp": "2025-09-24T21:21:02.736796", "component": "telegram_authorizer", "message": "Added authorized user: user789"}
+2025-09-24 21:21:02,736 - ozb_deal_filter.telegram_authorizer - INFO - {"timestamp": "2025-09-24T21:21:02.736796", "component": "telegram_authorizer", "message": "Removed authorized user: user789"}
+2025-09-24 21:21:02,746 - ozb_deal_filter.telegram_authorizer - INFO - {"timestamp": "2025-09-24T21:21:02.746091", "component": "telegram_authorizer", "message": "Telegram authorizer initialized with 1 authorized users"}
+2025-09-24 21:21:02,764 - ozb_deal_filter.telegram_bot_handler - INFO - {"timestamp": "2025-09-24T21:21:02.764661", "component": "telegram_bot_handler", "message": "Telegram bot handlers configured"}
+2025-09-24 21:21:02,765 - ozb_deal_filter.telegram_bot_handler - INFO - {"timestamp": "2025-09-24T21:21:02.765661", "component": "telegram_bot_handler", "message": "Telegram bot handler initialized"}

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(powershell:*)",
       "Bash(docker logs:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Read(//c/Users/George/.cache/pre-commit/**)",
+      "Bash(git commit:*)",
+      "Bash(python -m pre_commit run:*)"
     ],
     "deny": [],
     "ask": []

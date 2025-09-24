@@ -6,11 +6,11 @@ This script sets up the complete development environment including
 dependencies, pre-commit hooks, and development tools.
 """
 
+import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
-import argparse
-import os
 from typing import List, Optional
 
 
@@ -21,25 +21,23 @@ class DevSetup:
         self.project_root = project_root
         self.venv_path = project_root / "venv"
 
-    def run_command(self, command: List[str], description: str, check: bool = True) -> bool:
+    def run_command(
+        self, command: List[str], description: str, check: bool = True
+    ) -> bool:
         """Run a command and return success status."""
         print(f"\n🔧 {description}...")
         print(f"Running: {' '.join(command)}")
-        
+
         try:
-            result = subprocess.run(
-                command,
-                cwd=self.project_root,
-                check=check
-            )
-            
+            result = subprocess.run(command, cwd=self.project_root, check=check)
+
             if result.returncode == 0:
                 print(f"✅ {description} completed successfully")
                 return True
             else:
                 print(f"❌ {description} failed with exit code {result.returncode}")
                 return False
-                
+
         except subprocess.CalledProcessError as e:
             print(f"❌ {description} failed: {e}")
             return False
@@ -50,13 +48,17 @@ class DevSetup:
     def check_python_version(self) -> bool:
         """Check if Python version is compatible."""
         print("🐍 Checking Python version...")
-        
+
         version = sys.version_info
         if version.major == 3 and version.minor >= 11:
-            print(f"✅ Python {version.major}.{version.minor}.{version.micro} is compatible")
+            print(
+                f"✅ Python {version.major}.{version.minor}.{version.micro} is compatible"
+            )
             return True
         else:
-            print(f"❌ Python {version.major}.{version.minor}.{version.micro} is not compatible")
+            print(
+                f"❌ Python {version.major}.{version.minor}.{version.micro} is not compatible"
+            )
             print("Please install Python 3.11 or higher")
             return False
 
@@ -65,15 +67,15 @@ class DevSetup:
         if self.venv_path.exists():
             print(f"✅ Virtual environment already exists at {self.venv_path}")
             return True
-        
+
         return self.run_command(
             [sys.executable, "-m", "venv", str(self.venv_path)],
-            "Creating virtual environment"
+            "Creating virtual environment",
         )
 
     def activate_virtual_environment(self) -> Optional[str]:
         """Get the activation command for the virtual environment."""
-        if os.name == 'nt':  # Windows
+        if os.name == "nt":  # Windows
             activate_script = self.venv_path / "Scripts" / "activate.bat"
             return str(activate_script)
         else:  # Unix-like
@@ -85,12 +87,12 @@ class DevSetup:
         # Upgrade pip first
         pip_upgrade = self.run_command(
             [sys.executable, "-m", "pip", "install", "--upgrade", "pip"],
-            "Upgrading pip"
+            "Upgrading pip",
         )
-        
+
         if not pip_upgrade:
             return False
-        
+
         # Install project dependencies
         if dev:
             install_cmd = [sys.executable, "-m", "pip", "install", "-e", ".[dev]"]
@@ -98,14 +100,13 @@ class DevSetup:
         else:
             install_cmd = [sys.executable, "-m", "pip", "install", "-e", "."]
             description = "Installing production dependencies"
-        
+
         return self.run_command(install_cmd, description)
 
     def setup_pre_commit_hooks(self) -> bool:
         """Install and setup pre-commit hooks."""
         return self.run_command(
-            ["pre-commit", "install"],
-            "Installing pre-commit hooks"
+            ["pre-commit", "install"], "Installing pre-commit hooks"
         )
 
     def create_directories(self) -> bool:
@@ -117,13 +118,13 @@ class DevSetup:
             "config",
             "prompts",
         ]
-        
+
         print("📁 Creating project directories...")
         for directory in directories:
             dir_path = self.project_root / directory
             dir_path.mkdir(exist_ok=True)
             print(f"  Created: {directory}")
-        
+
         return True
 
     def setup_git_hooks(self) -> bool:
@@ -132,7 +133,7 @@ class DevSetup:
         if not hooks_dir.exists():
             print("⚠️  Git repository not found, skipping git hooks setup")
             return True
-        
+
         # Create a simple pre-push hook
         pre_push_hook = hooks_dir / "pre-push"
         pre_push_content = """#!/bin/sh
@@ -148,17 +149,17 @@ fi
 
 echo "Quality checks passed. Proceeding with push."
 """
-        
+
         pre_push_hook.write_text(pre_push_content)
         pre_push_hook.chmod(0o755)
-        
+
         print("✅ Git hooks setup completed")
         return True
 
     def create_config_files(self) -> bool:
         """Create default configuration files if they don't exist."""
         config_dir = self.project_root / "config"
-        
+
         # Create default config if it doesn't exist
         config_file = config_dir / "config.yaml"
         if not config_file.exists():
@@ -167,11 +168,12 @@ echo "Quality checks passed. Proceeding with push."
             example_config = config_dir / "config.example.yaml"
             if example_config.exists():
                 import shutil
+
                 shutil.copy2(example_config, config_file)
                 print(f"✅ Created {config_file} from example")
             else:
                 print("⚠️  config.example.yaml not found, skipping config creation")
-        
+
         return True
 
     def run_initial_tests(self) -> bool:
@@ -180,12 +182,12 @@ echo "Quality checks passed. Proceeding with push."
         return self.run_command(
             ["pytest", "-m", "unit", "--maxfail=5", "-q"],
             "Initial test run",
-            check=False
+            check=False,
         )
 
     def display_setup_summary(self) -> None:
         """Display setup summary and next steps."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🎉 Development environment setup completed!")
         print("\n📋 Summary:")
         print(f"  - Project root: {self.project_root}")
@@ -194,19 +196,19 @@ echo "Quality checks passed. Proceeding with push."
         print("  - Pre-commit hooks configured")
         print("  - Project directories created")
         print("  - Git hooks setup")
-        
+
         print("\n🚀 Next steps:")
-        
+
         # Show activation command
         activate_cmd = self.activate_virtual_environment()
         if activate_cmd:
             print(f"  1. Activate virtual environment: {activate_cmd}")
-        
+
         print("  2. Review and update config/config.yaml")
         print("  3. Run tests: python scripts/run-tests.py")
         print("  4. Run quality checks: python scripts/quality-check.py")
         print("  5. Start development!")
-        
+
         print("\n📚 Available commands:")
         print("  - make help                    # Show all available make commands")
         print("  - python scripts/run-tests.py # Run tests with various options")
@@ -216,7 +218,7 @@ echo "Quality checks passed. Proceeding with push."
     def setup_development_environment(self, skip_tests: bool = False) -> bool:
         """Setup the complete development environment."""
         print("🚀 Setting up OzBargain Deal Filter development environment...")
-        
+
         steps = [
             ("Python version check", self.check_python_version),
             ("Virtual environment creation", self.create_virtual_environment),
@@ -226,15 +228,15 @@ echo "Quality checks passed. Proceeding with push."
             ("Pre-commit hooks setup", self.setup_pre_commit_hooks),
             ("Git hooks setup", self.setup_git_hooks),
         ]
-        
+
         if not skip_tests:
             steps.append(("Initial tests", self.run_initial_tests))
-        
+
         for step_name, step_func in steps:
             if not step_func():
                 print(f"\n💥 Setup failed at step: {step_name}")
                 return False
-        
+
         self.display_setup_summary()
         return True
 
@@ -245,24 +247,19 @@ def main():
         description="Setup development environment for OzBargain Deal Filter"
     )
     parser.add_argument(
-        "--skip-tests",
-        action="store_true",
-        help="Skip initial test run"
+        "--skip-tests", action="store_true", help="Skip initial test run"
     )
     parser.add_argument(
-        "--project-root",
-        type=Path,
-        default=Path.cwd(),
-        help="Project root directory"
+        "--project-root", type=Path, default=Path.cwd(), help="Project root directory"
     )
-    
+
     args = parser.parse_args()
-    
+
     setup = DevSetup(args.project_root)
-    
+
     if not setup.setup_development_environment(skip_tests=args.skip_tests):
         sys.exit(1)
-    
+
     print("\n✨ Development environment is ready!")
 
 

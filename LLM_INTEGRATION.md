@@ -278,7 +278,7 @@ import requests
 
 def evaluate_deal(deal_text: str, model: str = "llama2:7b") -> str:
     """Evaluate a deal using local LLM"""
-    
+
     payload = {
         "model": model,
         "prompt": f"Analyze this deal for relevance: {deal_text}",
@@ -288,13 +288,13 @@ def evaluate_deal(deal_text: str, model: str = "llama2:7b") -> str:
             "max_tokens": 200
         }
     }
-    
+
     response = requests.post(
         "http://localhost:11434/api/generate",
         json=payload,
         timeout=60
     )
-    
+
     if response.status_code == 200:
         return response.json()["response"]
     else:

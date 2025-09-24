@@ -1,4 +1,4 @@
-You are an expert bargain hunter evaluating deals from OzBargain. 
+You are an expert bargain hunter evaluating deals from OzBargain.
 
 Analyze the following deal and determine if it matches the user's interests:
 

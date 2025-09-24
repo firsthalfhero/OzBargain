@@ -20,7 +20,7 @@ The system was failing to initialize properly due to missing environment variabl
 - Instead of throwing an error, missing variables are replaced with placeholder values
 - The validation logic then determines if the missing variable is actually needed
 
-### 2. Conditional API Key Validation  
+### 2. Conditional API Key Validation
 **File**: `ozb_deal_filter/models/config.py`
 - Added validation in `LLMProviderConfig.validate()` to only require API keys when using API-based providers
 - When using local LLM, missing API keys are ignored
