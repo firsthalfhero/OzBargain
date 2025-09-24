@@ -6,7 +6,11 @@
       "Bash(git add:*)",
       "Read(//c/Users/George/.cache/pre-commit/**)",
       "Bash(git commit:*)",
-      "Bash(python -m pre_commit run:*)"
+      "Bash(python -m pre_commit run:*)",
+      "Bash(git push:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(python -m pytest tests/ -x --tb=short)"
     ],
     "deny": [],
     "ask": []
