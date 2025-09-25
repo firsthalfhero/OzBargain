@@ -38,6 +38,8 @@ logs/*.log
 # Configuration files with secrets
 config/config.yaml
 config/config.json
+config/dynamic_feeds.yaml
+config/backups/*
 .env
 
 # Test coverage
