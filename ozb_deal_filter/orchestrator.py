@@ -202,12 +202,23 @@ class ApplicationOrchestrator:
                 deal_callback=self._handle_new_deals,
             )
 
-            # Add feeds to monitor
+            # Initialize dynamic feed manager first (needed for loading all feeds)
+            if self._config.telegram_bot and self._config.telegram_bot.enabled:
+                self._dynamic_feed_manager = DynamicFeedManager(
+                    self._config_manager.config_path
+                )
+                self._component_health["dynamic_feed_manager"] = True
+                self.logger.info("Dynamic feed manager initialized")
+
+            # Add feeds to monitor (static + dynamic)
             for feed_url in self._config.rss_feeds:
                 self._rss_monitor.add_feed(feed_url)
 
+            # Load and add dynamic feeds
+            await self._merge_dynamic_feeds()
+
             self._component_health["rss_monitor"] = True
-            self.logger.info("RSS monitor initialized")
+            self.logger.info("RSS monitor initialized with all feeds")
 
             # Initialize deal parser
             self._deal_parser = DealParser()
@@ -273,11 +284,13 @@ class ApplicationOrchestrator:
         try:
             self.logger.info("Initializing Telegram bot components...")
 
-            # Initialize dynamic feed manager
-            config_path = self.config_path or "config/config.yaml"
-            self._dynamic_feed_manager = DynamicFeedManager(config_path)
-            self._component_health["dynamic_feed_manager"] = True
-            self.logger.info("Dynamic feed manager initialized")
+            # Dynamic feed manager should already be initialized
+            if not self._dynamic_feed_manager:
+                # Fallback initialization if not already done
+                config_path = self.config_path or "config/config.yaml"
+                self._dynamic_feed_manager = DynamicFeedManager(config_path)
+                self._component_health["dynamic_feed_manager"] = True
+                self.logger.info("Dynamic feed manager initialized (fallback)")
 
             # Initialize feed command processor
             self._feed_command_processor = FeedCommandProcessor(
@@ -304,9 +317,6 @@ class ApplicationOrchestrator:
             else:
                 self._component_health["telegram_bot_handler"] = False
                 self.logger.error("Failed to connect to Telegram Bot API")
-
-            # Load and merge dynamic feeds with static feeds
-            await self._merge_dynamic_feeds()
 
         except Exception as e:
             self.logger.error(
