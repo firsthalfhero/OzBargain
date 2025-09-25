@@ -400,7 +400,7 @@ class DealParser:
                 category=raw_deal.category or "Unknown",
                 url=raw_deal.link,
                 timestamp=timestamp,
-                feed_source="OzBargain RSS",  # Default feed source for now
+                feed_source=raw_deal.feed_url,  # Use actual feed URL from RawDeal
                 votes=votes,
                 comments=comments,
                 urgency_indicators=urgency_indicators,

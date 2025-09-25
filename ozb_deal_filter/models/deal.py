@@ -17,6 +17,7 @@ class RawDeal:
     link: str
     pub_date: str
     category: Optional[str] = None
+    feed_url: Optional[str] = None  # The RSS feed URL this deal came from
 
     def validate(self) -> bool:
         """Validate the raw deal data."""

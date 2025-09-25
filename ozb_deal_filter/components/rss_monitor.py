@@ -190,12 +190,13 @@ class DealDetector:
             f"DealDetector initialized with {len(self.seen_deal_ids)} known deals"
         )
 
-    def detect_new_deals(self, feed_data: str) -> List[RawDeal]:
+    def detect_new_deals(self, feed_data: str, feed_url: str = None) -> List[RawDeal]:
         """
         Detect new deals from RSS feed data.
 
         Args:
             feed_data: RSS feed content as string
+            feed_url: URL of the RSS feed (optional)
 
         Returns:
             List of new RawDeal objects
@@ -252,6 +253,7 @@ class DealDetector:
                         link=deal_id,
                         pub_date=pub_date_str,
                         category=self._extract_category(entry),
+                        feed_url=feed_url,  # Include the source feed URL
                     )
 
                     # Validate raw deal
@@ -515,7 +517,7 @@ class RSSMonitor:
                 return
 
             # Detect new deals
-            new_deals = self.deal_detector.detect_new_deals(feed_content)
+            new_deals = self.deal_detector.detect_new_deals(feed_content, feed_url)
 
             if new_deals and self.deal_callback:
                 # Call callback with new deals
