@@ -295,19 +295,8 @@ class AlertFormatter(IAlertFormatter):
         if deal.feed_source:
             message_lines.append(f"📡 <b>Feed:</b> {deal.feed_source}")
 
-        # Authenticity
-        if filter_result.authenticity_score > 0:
-            score_emoji = (
-                "✅"
-                if filter_result.authenticity_score >= 0.7
-                else "⚠️"
-                if filter_result.authenticity_score >= 0.5
-                else "❌"
-            )
-            message_lines.append(
-                f"{score_emoji} <b>Authenticity:</b> "
-                f"{filter_result.authenticity_score:.1%}"
-            )
+        # Authenticity scoring removed from Telegram feed as deals are sent immediately
+        # before community has time to provide meaningful engagement data
 
         # Link as button
         message_lines.append("")
