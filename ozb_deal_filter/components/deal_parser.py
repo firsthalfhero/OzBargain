@@ -26,13 +26,13 @@ class PriceExtractor:
     # Price patterns for different formats
     PRICE_PATTERNS = [
         # Starting from $999, from $99.99 (current price indicators)
-        r"(?:starting\s+from|from)\s*\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
+        r"(?:starting\s+from|from)\s*\$(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)",
         # AU$99.99, AUD99.99
-        r"(?:AU\$|AUD)\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
-        # $99.99, $1,234.56 (general dollar amounts)
-        r"\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
+        r"(?:AU\$|AUD)\s*(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)",
+        # $99.99, $1,234.56, $1199 (general dollar amounts - handles 1-4 digits without comma)
+        r"\$(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)",
         # 99.99, 1234.56 (when preceded by price indicators)
-        r"(?:price|cost|now|sale|deal)\s*:?\s*" r"(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
+        r"(?:price|cost|now|sale|deal)\s*:?\s*" r"(\d{1,4}(?:,\d{3})*(?:\.\d{2})?)",
     ]
 
     # Discount patterns

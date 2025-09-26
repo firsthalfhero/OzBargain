@@ -63,6 +63,34 @@ class TestPriceExtractor:
         assert current == 149.99
         assert original is None
 
+    def test_extract_prices_four_digit_amounts(self):
+        """Test price extraction with 4-digit dollar amounts like $1119."""
+        extractor = PriceExtractor()
+
+        # Test the specific case from the bug report
+        current, original = extractor.extract_prices(
+            'ASUS ROG Strix OLED XG27UCDMG 26.5" 240Hz 4K UHD QD-OLED Gaming Monitor $1119 Delivered'
+        )
+        assert current == 1119.0
+        assert original is None
+
+        # Test other 4-digit amounts
+        current, original = extractor.extract_prices("Great deal for $2499")
+        assert current == 2499.0
+        assert original is None
+
+        # Test 4-digit amount with decimal
+        current, original = extractor.extract_prices("Price: $1199.99")
+        assert current == 1199.99
+        assert original is None
+
+        # Test 4-digit amount in different context
+        current, original = extractor.extract_prices(
+            "Deal: Gaming laptop $3599 limited time"
+        )
+        assert current == 3599.0
+        assert original is None
+
     def test_extract_prices_no_prices(self):
         """Test price extraction when no prices found."""
         extractor = PriceExtractor()
