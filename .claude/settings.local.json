@@ -1,6 +1,12 @@
 {
   "permissions": {
     "allow": [
+      "Bash(claude mcp auth notion)",
+      "Bash(claude mcp:*)",
+      "Bash(python -m pip install:*)",
+      "Bash(python:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
       "Bash(powershell:*)",
       "Bash(docker logs:*)",
       "Bash(git add:*)",
@@ -11,8 +17,226 @@
       "Bash(docker-compose:*)",
       "Bash(docker-compose up:*)",
       "Bash(python -m pytest tests/ -x --tb=short)"
+    ]
+  },
+  "name": "Personal Finance Tool Development",
+  "description": "Autonomous development environment for Python-based personal finance CLI tool with restricted permissions for safety",
+  "computer_use_policy": "deny",
+  "read_write_policy": "restricted",
+  "allowed_operations": {
+    "file_operations": {
+      "create": true,
+      "read": true,
+      "write": true,
+      "rename": true,
+      "copy": true,
+      "move": true,
+      "delete": false
+    },
+    "directory_operations": {
+      "create": true,
+      "list": true,
+      "navigate": true,
+      "delete": false
+    },
+    "execution": {
+      "python": true,
+      "pip": true,
+      "pytest": true,
+      "git": true,
+      "bash_commands": true
+    }
+  },
+  "path_restrictions": {
+    "working_directory": "/personal-finance",
+    "allowed_paths": [
+      "/personal-finance/**",
+      "/tmp/**",
+      "~/.cache/pip/**",
+      "~/.local/lib/python*/**"
     ],
-    "deny": [],
-    "ask": []
+    "forbidden_paths": [
+      "/",
+      "/home/**",
+      "/usr/**",
+      "/etc/**",
+      "/var/**",
+      "/opt/**",
+      "~/**"
+    ],
+    "exceptions": {
+      "read_only": [
+        "/usr/bin/python*",
+        "/usr/bin/pip*",
+        "/usr/bin/git",
+        "/usr/local/bin/**",
+        "~/.gitconfig",
+        "~/.ssh/config"
+      ]
+    }
+  },
+  "command_restrictions": {
+    "forbidden_commands": [
+      "rm",
+      "rmdir",
+      "del",
+      "delete",
+      "unlink",
+      "shred",
+      "sudo",
+      "su",
+      "chmod 777",
+      "chown",
+      "systemctl",
+      "service",
+      "reboot",
+      "shutdown",
+      "halt",
+      "killall",
+      "pkill -9"
+    ],
+    "allowed_commands": [
+      "ls",
+      "cd",
+      "pwd",
+      "mkdir",
+      "touch",
+      "cp",
+      "mv",
+      "cat",
+      "head",
+      "tail",
+      "grep",
+      "find",
+      "sort",
+      "uniq",
+      "wc",
+      "diff",
+      "python",
+      "python3",
+      "pip",
+      "pip3",
+      "pytest",
+      "black",
+      "flake8",
+      "mypy",
+      "git",
+      "tree",
+      "echo",
+      "which"
+    ]
+  },
+  "development_permissions": {
+    "package_management": {
+      "install_packages": true,
+      "uninstall_packages": true,
+      "upgrade_packages": true,
+      "create_requirements": true,
+      "virtual_environments": true
+    },
+    "git_operations": {
+      "init": true,
+      "add": true,
+      "commit": true,
+      "branch": true,
+      "checkout": true,
+      "merge": true,
+      "push": false,
+      "pull": false,
+      "remote": false
+    },
+    "testing": {
+      "run_tests": true,
+      "create_tests": true,
+      "coverage_reports": true,
+      "test_data_generation": true
+    },
+    "code_quality": {
+      "linting": true,
+      "formatting": true,
+      "type_checking": true,
+      "documentation_generation": true
+    }
+  },
+  "project_structure": {
+    "auto_create_directories": [
+      "src",
+      "tests",
+      "docs",
+      "data/raw",
+      "data/processed",
+      "data/models",
+      "scripts",
+      "logs",
+      "backups"
+    ],
+    "required_files": [
+      "README.md",
+      "requirements.txt",
+      "requirements-dev.txt",
+      ".gitignore",
+      "setup.py",
+      "pyproject.toml"
+    ]
+  },
+  "safety_measures": {
+    "backup_before_major_changes": true,
+    "confirm_destructive_operations": true,
+    "log_all_operations": true,
+    "size_limits": {
+      "max_file_size_mb": 100,
+      "max_directory_files": 10000
+    }
+  },
+  "autonomous_capabilities": {
+    "architecture_decisions": true,
+    "code_generation": true,
+    "refactoring": true,
+    "bug_fixing": true,
+    "feature_implementation": true,
+    "test_creation": true,
+    "documentation": true,
+    "dependency_management": true,
+    "configuration_files": true,
+    "database_migrations": true
+  },
+  "workflow_automation": {
+    "pre_commit_hooks": true,
+    "automated_testing": true,
+    "code_formatting": true,
+    "dependency_updates": true,
+    "backup_creation": true
+  },
+  "communication_preferences": {
+    "request_permission_for": [
+      "external_api_calls",
+      "network_requests",
+      "file_modifications_outside_project",
+      "system_configuration_changes",
+      "irreversible_operations"
+    ],
+    "auto_proceed_with": [
+      "code_creation",
+      "test_writing",
+      "documentation_updates",
+      "dependency_installation",
+      "git_commits",
+      "backup_creation"
+    ]
+  },
+  "development_standards": {
+    "code_style": "PEP 8",
+    "testing_framework": "pytest",
+    "documentation_style": "Google/NumPy docstrings",
+    "type_checking": "mypy",
+    "formatter": "black",
+    "linter": "flake8"
+  },
+  "environment_setup": {
+    "python_version": "3.9+",
+    "virtual_environment": "recommended",
+    "dependency_resolver": "pip",
+    "development_mode": true,
+    "debug_logging": true
   }
 }

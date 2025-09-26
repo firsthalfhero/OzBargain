@@ -15,9 +15,14 @@
 # /feed_status - Get monitoring status
 # /help - Show help message
 
-rss_feeds:
-  - "https://www.ozbargain.com.au/deals/feed"
-  - "https://www.ozbargain.com.au/cat/computing/feed"
+# RSS feeds list - Leave empty to use dynamic feed management via Telegram bot
+# Add feeds using the /add_feed command in Telegram instead of editing this file
+rss_feeds: []
+
+# Example static feeds (uncomment if you want to configure feeds here instead):
+# rss_feeds:
+#   - "https://www.ozbargain.com.au/deals/feed"
+#   - "https://www.ozbargain.com.au/cat/computing/feed"
 
 # Dynamic feeds managed via Telegram bot (optional)
 # These are automatically updated when using /add_feed and /remove_feed commands

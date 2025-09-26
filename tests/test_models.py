@@ -296,10 +296,10 @@ class TestConfiguration:
         )
         assert config.validate() is True
 
-    def test_empty_rss_feeds_raises_error(self):
-        """Test that empty RSS feeds list raises ValueError."""
+    def test_empty_rss_feeds_allowed_for_dynamic_feeds(self):
+        """Test that empty RSS feeds list is now allowed (for dynamic feeds)."""
         config = Configuration(
-            rss_feeds=[],  # Empty list
+            rss_feeds=[],  # Empty list is now allowed
             user_criteria=UserCriteria(
                 prompt_template_path="prompts/deal_evaluator.txt",
                 max_price=500.0,
@@ -318,10 +318,62 @@ class TestConfiguration:
             polling_interval=120,
             max_concurrent_feeds=5,
         )
-        with pytest.raises(
-            ValueError, match="At least one RSS feed must be configured"
-        ):
-            config.validate()
+        # Should not raise an error anymore
+        assert config.validate() is True
+
+    def test_empty_feeds_with_dynamic_feeds_enabled(self):
+        """Test configuration with empty static feeds but dynamic feeds available."""
+        config = Configuration(
+            rss_feeds=[],  # Empty static feeds
+            user_criteria=UserCriteria(
+                prompt_template_path="prompts/deal_evaluator.txt",
+                max_price=500.0,
+                min_discount_percentage=20.0,
+                categories=["Electronics"],
+                keywords=["laptop"],
+                min_authenticity_score=0.6,
+            ),
+            llm_provider=LLMProviderConfig(
+                type="local", local={"model": "llama2", "docker_image": "ollama/ollama"}
+            ),
+            messaging_platform=MessagingPlatformConfig(
+                type="telegram",
+                telegram={"bot_token": "test-token", "chat_id": "test-chat"},
+            ),
+            polling_interval=120,
+            max_concurrent_feeds=5,
+            dynamic_feeds=[
+                "https://example.com/dynamic_feed.xml"
+            ],  # Dynamic feeds present
+        )
+        # Should validate successfully
+        assert config.validate() is True
+
+    def test_both_static_and_dynamic_feeds_empty(self):
+        """Test configuration with both static and dynamic feeds empty."""
+        config = Configuration(
+            rss_feeds=[],  # Empty static feeds
+            user_criteria=UserCriteria(
+                prompt_template_path="prompts/deal_evaluator.txt",
+                max_price=500.0,
+                min_discount_percentage=20.0,
+                categories=["Electronics"],
+                keywords=["laptop"],
+                min_authenticity_score=0.6,
+            ),
+            llm_provider=LLMProviderConfig(
+                type="local", local={"model": "llama2", "docker_image": "ollama/ollama"}
+            ),
+            messaging_platform=MessagingPlatformConfig(
+                type="telegram",
+                telegram={"bot_token": "test-token", "chat_id": "test-chat"},
+            ),
+            polling_interval=120,
+            max_concurrent_feeds=5,
+            dynamic_feeds=[],  # Empty dynamic feeds too
+        )
+        # Should still validate - feeds can be added dynamically via Telegram
+        assert config.validate() is True
 
     def test_short_polling_interval_raises_error(self):
         """Test that too short polling interval raises ValueError."""

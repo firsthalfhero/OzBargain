@@ -279,10 +279,9 @@ class ConfigurationManager(IConfigurationManager):
             Dictionary with example configuration structure.
         """
         return {
-            "rss_feeds": [
-                "https://www.ozbargain.com.au/deals/feed",
-                "https://www.ozbargain.com.au/cat/computing/feed",
-            ],
+            # RSS feeds list - can be empty and managed via Telegram bot commands
+            # Use /add_feed command in Telegram to add feeds dynamically
+            "rss_feeds": [],
             "user_criteria": {
                 "prompt_template": "prompts/deal_evaluator.txt",
                 "max_price": 500.0,

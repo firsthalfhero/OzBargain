@@ -263,8 +263,14 @@ class Configuration:
         if not isinstance(self.rss_feeds, list):
             raise ValueError("RSS feeds must be a list")
 
-        if not self.rss_feeds:
-            raise ValueError("At least one RSS feed must be configured")
+        # RSS feeds can be empty if dynamic feeds are used
+        # Validate that at least one feed source exists (static OR dynamic)
+        has_static_feeds = bool(self.rss_feeds)
+        has_dynamic_feeds = bool(self.dynamic_feeds)
+
+        if not has_static_feeds and not has_dynamic_feeds:
+            # This is acceptable - feeds can be added dynamically via Telegram
+            pass
 
         for feed_url in self.rss_feeds:
             if not isinstance(feed_url, str) or not feed_url.strip():

@@ -211,14 +211,32 @@ class ApplicationOrchestrator:
                 self.logger.info("Dynamic feed manager initialized")
 
             # Add feeds to monitor (static + dynamic)
-            for feed_url in self._config.rss_feeds:
-                self._rss_monitor.add_feed(feed_url)
+            static_feed_count = 0
+            if self._config.rss_feeds:
+                for feed_url in self._config.rss_feeds:
+                    self._rss_monitor.add_feed(feed_url)
+                    static_feed_count += 1
+                self.logger.info(f"Added {static_feed_count} static feeds to monitor")
+            else:
+                self.logger.info(
+                    "No static feeds configured - using dynamic feeds only"
+                )
 
             # Load and add dynamic feeds
-            await self._merge_dynamic_feeds()
+            dynamic_feed_count = await self._merge_dynamic_feeds()
+
+            total_feeds = static_feed_count + dynamic_feed_count
+            if total_feeds == 0:
+                self.logger.warning(
+                    "No feeds configured (static or dynamic). "
+                    "Use Telegram bot commands to add feeds dynamically."
+                )
+            else:
+                self.logger.info(
+                    f"RSS monitor initialized with {total_feeds} total feeds"
+                )
 
             self._component_health["rss_monitor"] = True
-            self.logger.info("RSS monitor initialized with all feeds")
 
             # Initialize deal parser
             self._deal_parser = DealParser()
@@ -330,11 +348,15 @@ class ApplicationOrchestrator:
                 }
             )
 
-    async def _merge_dynamic_feeds(self) -> None:
-        """Merge dynamic feeds with RSS monitor."""
+    async def _merge_dynamic_feeds(self) -> int:
+        """Merge dynamic feeds with RSS monitor.
+
+        Returns:
+            Number of dynamic feeds loaded.
+        """
         try:
             if not self._dynamic_feed_manager:
-                return
+                return 0
 
             # Get dynamic feeds
             dynamic_feeds = self._dynamic_feed_manager.list_feed_configs()
@@ -350,9 +372,14 @@ class ApplicationOrchestrator:
                         self._rss_monitor.add_feed(feed_config.url)
 
                 self.logger.info("Dynamic feeds merged with RSS monitor")
+                return len(dynamic_feeds)
+            else:
+                self.logger.info("No dynamic feeds found")
+                return 0
 
         except Exception as e:
             self.logger.error(f"Error merging dynamic feeds: {e}")
+            return 0
 
     async def _validate_components(self) -> bool:
         """Validate that all components are working correctly."""
@@ -465,17 +492,21 @@ class ApplicationOrchestrator:
 
             # Update RSS monitor feeds if changed
             if new_config.rss_feeds != self._config.rss_feeds:
-                # Remove old feeds
-                for feed_url in self._config.rss_feeds:
-                    if feed_url not in new_config.rss_feeds:
-                        self._rss_monitor.remove_feed(feed_url)
+                # Remove old feeds (handle empty current feeds)
+                if self._config.rss_feeds:
+                    for feed_url in self._config.rss_feeds:
+                        if feed_url not in (new_config.rss_feeds or []):
+                            self._rss_monitor.remove_feed(feed_url)
 
-                # Add new feeds
-                for feed_url in new_config.rss_feeds:
-                    if feed_url not in self._config.rss_feeds:
-                        self._rss_monitor.add_feed(feed_url)
+                # Add new feeds (handle empty new feeds)
+                if new_config.rss_feeds:
+                    for feed_url in new_config.rss_feeds:
+                        if feed_url not in (self._config.rss_feeds or []):
+                            self._rss_monitor.add_feed(feed_url)
 
-                self.logger.info("RSS feeds updated")
+                old_count = len(self._config.rss_feeds or [])
+                new_count = len(new_config.rss_feeds or [])
+                self.logger.info(f"RSS feeds updated: {old_count} -> {new_count} feeds")
 
             # Update LLM provider if changed
             if new_config.llm_provider != self._config.llm_provider:

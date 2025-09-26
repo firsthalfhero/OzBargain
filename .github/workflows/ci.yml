@@ -47,19 +47,19 @@ jobs:
 
     - name: Run code quality checks
       run: |
-        black --check ozb_deal_filter/ tests/
-        isort --check-only ozb_deal_filter/ tests/
-        flake8 ozb_deal_filter/ tests/
-        mypy ozb_deal_filter/
+        python -m black --check ozb_deal_filter/ tests/
+        python -m isort --check-only ozb_deal_filter/ tests/
+        python -m flake8 ozb_deal_filter/ tests/
+        python -m mypy ozb_deal_filter/
 
     - name: Run security checks
       continue-on-error: true
       run: |
-        bandit -r ozb_deal_filter/ --skip B101,B601,B324,B404,B603,B311,B112,B110 || echo "Security checks completed with warnings"
+        python -m bandit -r ozb_deal_filter/ --skip B101,B601,B324,B404,B603,B311,B112,B110 || echo "Security checks completed with warnings"
 
     - name: Run tests with coverage
       run: |
-        pytest --cov=ozb_deal_filter --cov-report=xml --cov-report=html --cov-fail-under=50 -v || echo "Tests completed with warnings"
+        python -m pytest --cov=ozb_deal_filter --cov-report=xml --cov-report=html --cov-fail-under=50 -v || echo "Tests completed with warnings"
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -98,8 +98,8 @@ jobs:
     - name: Run security checks
       continue-on-error: true
       run: |
-        bandit -r ozb_deal_filter/ -f json -o bandit-report.json --skip B101,B601,B324,B404,B603,B311,B112,B110 || echo "Bandit completed with warnings"
-        safety check --json --output safety-report.json --ignore 70612 || echo "Safety completed with warnings"
+        python -m bandit -r ozb_deal_filter/ -f json -o bandit-report.json --skip B101,B601,B324,B404,B603,B311,B112,B110 || echo "Bandit completed with warnings"
+        python -m safety check --json --output safety-report.json --ignore 70612 || echo "Safety completed with warnings"
 
     - name: Upload security reports
       uses: actions/upload-artifact@v4
@@ -148,7 +148,7 @@ jobs:
     - name: Run performance benchmarks
       continue-on-error: true
       run: |
-        pytest -m benchmark --benchmark-json=benchmark-results.json || echo "No benchmark tests found"
+        python -m pytest -m benchmark --benchmark-json=benchmark-results.json || echo "No benchmark tests found"
 
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
@@ -176,5 +176,5 @@ jobs:
     - name: Run pre-commit hooks
       continue-on-error: true
       run: |
-        pre-commit install || echo "Pre-commit install failed"
-        pre-commit run --all-files || echo "Pre-commit completed with warnings"
+        python -m pre_commit install || echo "Pre-commit install failed"
+        python -m pre_commit run --all-files || echo "Pre-commit completed with warnings"
