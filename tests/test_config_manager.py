@@ -151,7 +151,7 @@ class TestConfigurationManager:
     def test_invalid_config_data_raises_error(self):
         """Test that invalid configuration data raises error."""
         config_data = {
-            "rss_feeds": [],  # Empty feeds list - invalid
+            "rss_feeds": ["invalid-url-format"],  # Invalid URL format
             "user_criteria": {
                 "prompt_template": "",  # Empty template - invalid
                 "min_authenticity_score": 2.0,  # Invalid score > 1
@@ -235,15 +235,38 @@ class TestConfigurationManager:
         finally:
             os.unlink(config_file)
 
-    def test_validate_config_file_invalid(self):
-        """Test validation of invalid configuration file."""
-        config_data = {"rss_feeds": []}  # Invalid - empty feeds
+    def test_validate_config_file_empty_feeds_allowed(self):
+        """Test validation of configuration file with empty feeds (now allowed)."""
+        # Create a minimal valid config with empty feeds
+        config_data = {
+            "rss_feeds": [],  # Empty feeds now allowed
+            "user_criteria": {
+                "prompt_template_path": "prompts/deal_evaluator.txt",
+                "max_price": 500.0,
+                "min_discount_percentage": 20.0,
+                "categories": ["Electronics"],
+                "keywords": ["laptop"],
+                "min_authenticity_score": 0.6,
+            },
+            "llm_provider": {
+                "type": "local",
+                "local": {"model": "llama2", "docker_image": "ollama/ollama"},
+            },
+            "messaging_platform": {
+                "type": "telegram",
+                "telegram": {"bot_token": "test-token", "chat_id": "test-chat"},
+            },
+            "system": {
+                "polling_interval": 120,
+                "max_concurrent_feeds": 5,
+            },
+        }
         config_file = self.create_temp_config(config_data, "yaml")
 
         try:
-            manager = ConfigurationManager(config_file)  # Provide explicit path
-            with pytest.raises(ValueError, match="Configuration validation failed"):
-                manager.validate_config_file(config_file)
+            manager = ConfigurationManager(config_file)
+            # Should not raise an error
+            assert manager.validate_config_file(config_file) is True
         finally:
             os.unlink(config_file)
 
@@ -279,7 +302,8 @@ class TestConfigurationManager:
 
             # Verify template structure
             assert isinstance(template["rss_feeds"], list)
-            assert len(template["rss_feeds"]) > 0
+            # RSS feeds should now be empty by default (dynamic feeds approach)
+            assert len(template["rss_feeds"]) == 0
             assert isinstance(template["user_criteria"], dict)
             assert "prompt_template" in template["user_criteria"]
         finally:

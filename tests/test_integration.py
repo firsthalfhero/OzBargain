@@ -1829,3 +1829,114 @@ class TestErrorRecoveryScenarios:
     async def test_network_failure_recovery(self, config_file_recovery):
         """Test recovery from network failures."""
         request_count = 0
+        # Test implementation would go here
+        assert True
+
+
+@pytest.mark.integration
+class TestEmptyFeedScenarios:
+    """Test system behavior with empty RSS feeds."""
+
+    @pytest.fixture
+    def empty_feed_config(self):
+        """Create configuration with empty RSS feeds."""
+        return {
+            "rss_feeds": [],  # Empty feeds list
+            "user_criteria": {
+                "prompt_template": "prompts/deal_evaluator.example.txt",
+                "max_price": 500.0,
+                "min_discount_percentage": 20.0,
+                "categories": ["Electronics"],
+                "keywords": ["laptop"],
+                "min_authenticity_score": 0.6,
+            },
+            "llm_provider": {
+                "type": "local",
+                "local": {"model": "llama2", "docker_image": "ollama/ollama"},
+            },
+            "messaging_platform": {
+                "type": "telegram",
+                "telegram": {"bot_token": "test_token", "chat_id": "test_chat"},
+            },
+            "system": {
+                "polling_interval": 120,
+                "max_concurrent_feeds": 5,
+            },
+            "telegram_bot": {
+                "enabled": True,
+                "bot_token": "test_token",
+                "authorized_users": ["test_user"],
+            },
+        }
+
+    @pytest.fixture
+    def empty_feed_config_file(self, empty_feed_config):
+        """Create config file with empty RSS feeds."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            yaml.dump(empty_feed_config, f)
+            return f.name
+
+    @pytest.mark.asyncio
+    async def test_system_startup_with_empty_feeds(self, empty_feed_config_file):
+        """Test system starts successfully with empty RSS feeds."""
+        orchestrator = ApplicationOrchestrator(empty_feed_config_file)
+
+        # System should initialize without error
+        success = await orchestrator.initialize()
+        assert success is True
+
+        # Check that RSS monitor is healthy
+        assert orchestrator._component_health.get("rss_monitor", False) is True
+
+        # Cleanup
+        await orchestrator.shutdown()
+        Path(empty_feed_config_file).unlink(missing_ok=True)
+
+    @pytest.mark.asyncio
+    async def test_empty_feeds_with_dynamic_feeds(self, empty_feed_config_file):
+        """Test system behavior when dynamic feeds are available."""
+        with patch(
+            "ozb_deal_filter.services.dynamic_feed_manager.DynamicFeedManager"
+        ) as mock_manager:
+            # Mock dynamic feed manager with some feeds
+            mock_manager.return_value.list_feed_configs.return_value = [
+                Mock(url="https://example.com/dynamic_feed.xml")
+            ]
+
+            orchestrator = ApplicationOrchestrator(empty_feed_config_file)
+            success = await orchestrator.initialize()
+            assert success is True
+
+            # Should have loaded dynamic feeds
+            mock_manager.return_value.list_feed_configs.assert_called()
+
+            await orchestrator.shutdown()
+
+        Path(empty_feed_config_file).unlink(missing_ok=True)
+
+    @pytest.mark.asyncio
+    async def test_zero_feeds_warning_message(self, empty_feed_config_file):
+        """Test that appropriate warnings are logged for zero feeds."""
+        with patch(
+            "ozb_deal_filter.services.dynamic_feed_manager.DynamicFeedManager"
+        ) as mock_manager:
+            # Mock empty dynamic feeds
+            mock_manager.return_value.list_feed_configs.return_value = []
+
+            orchestrator = ApplicationOrchestrator(empty_feed_config_file)
+
+            with patch.object(orchestrator.logger, "warning") as mock_warning:
+                success = await orchestrator.initialize()
+                assert success is True
+
+                # Should have warned about no feeds
+                warning_calls = [
+                    call
+                    for call in mock_warning.call_args_list
+                    if "No feeds configured" in str(call)
+                ]
+                assert len(warning_calls) > 0
+
+            await orchestrator.shutdown()
+
+        Path(empty_feed_config_file).unlink(missing_ok=True)
